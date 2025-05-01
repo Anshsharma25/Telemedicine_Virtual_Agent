@@ -1,0 +1,10 @@
+langchain
+langchain-core
+
+langchain-google-genai
+google-generativeai 
+
+# Environment variables management
+numpy
+python-dotenv
+scikit-learn
