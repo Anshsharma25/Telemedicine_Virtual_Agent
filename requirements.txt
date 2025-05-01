@@ -8,3 +8,7 @@ google-generativeai
 numpy
 python-dotenv
 scikit-learn
+
+# Google Cloud dependencies for text-to-speech and speech-to-text
+ google-cloud-speech
+ pyaudio
