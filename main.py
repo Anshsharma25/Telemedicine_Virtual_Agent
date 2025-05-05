@@ -6,6 +6,7 @@ PHASE 1: Taking input from the user and passing it to the model in the form of T
 import os
 import requests
 import speech_recognition as sr
+import pyttsx3
 from dotenv import load_dotenv
 from langchain_google_genai import ChatGoogleGenerativeAI
 
@@ -13,8 +14,15 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 load_dotenv()
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 
-# Initialize the Gemini model
+# Initialize the Gemini model and text-to-speech engine
 model = ChatGoogleGenerativeAI(model='gemini-1.5-pro')
+tts_engine = pyttsx3.init()
+
+# Speak the given text aloud
+def speak_text(text):
+    print("🗣️ Speaking the simplified explanation...")
+    tts_engine.say(text)
+    tts_engine.runAndWait()
 
 # Capture audio input and convert to text
 def capture_audio_input():
@@ -57,7 +65,7 @@ def find_nearby_hospitals(lat, lng):
     url = (
         f"https://maps.googleapis.com/maps/api/place/nearbysearch/json"
         f"?location={lat},{lng}"
-        f"&radius=50000"  # 50 km max allowed
+        f"&radius=50000"
         f"&type=hospital"
         f"&key={GOOGLE_MAPS_API_KEY}"
     )
@@ -92,22 +100,35 @@ def main():
         print("❌ Invalid input type. Please enter 'text' or 'audio'.")
         return
 
+    # Step 1: Get model's main response
     result = model.invoke(user_input)
-    print("\n🤖 Agent response:", result.content)
+    original_response = result.content
+    print("\n🤖 Agent response:", original_response)
 
-    # Follow-up question
-    follow_up = input("\n🤖 Do you want to find the top 5 hospitals near your area? (yes/no): ").strip().lower()
-    if follow_up in ["yes", "y"]:
-        # Ask for user input for address
-        address = input("\nPlease provide your address: ").strip()
-        lat, lng = get_coordinates_from_address(address)
-        if lat is None or lng is None:
-            print("⚠️ Unable to find hospitals without a valid location.")
-            return
-        hospital_list = find_nearby_hospitals(lat, lng)
-        print(hospital_list)
-    else:
-        print("👍 Okay! Let me know if you need anything else.")
+    # Step 2: Ask model to explain the response in simple terms
+    explanation_prompt = f"Explain this response in very simple terms suitable for a 5-year-old:\n\n{original_response}"
+    simple_explanation = model.invoke(explanation_prompt).content
+    print("\n🗣️ Simplified Explanation:")
+    print(simple_explanation)
+
+    # Step 3: Speak the simplified explanation
+    speak_text(simple_explanation)
+
+    # # Follow-up question
+    # follow_up = input("\n🤖 Do you want to find the top 5 hospitals near your area? (yes/no): ").strip().lower()
+    # if follow_up in ["yes", "y"]:
+    #     address = input("\nPlease provide your address: ").strip()
+    #     lat, lng = get_coordinates_from_address(address)
+    #     if lat is None or lng is None:
+
+    
+    #         print("⚠️ Unable to find hospitals without a valid location.")
+    #         return
+    #     hospital_list = find_nearby_hospitals(lat, lng)
+    #     print(hospital_list)
+    #     speak_text(hospital_list)
+    # else:
+    #     print("👍 Okay! Let me know if you need anything else.")
 
 if __name__ == "__main__":
     main()
