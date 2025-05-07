@@ -15,7 +15,7 @@ load_dotenv()
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 
 # Initialize the Gemini model and text-to-speech engine
-model = ChatGoogleGenerativeAI(model='gemini-1.5-pro')
+model = ChatGoogleGenerativeAI(model='gemini-1.5-flash-latest')
 tts_engine = pyttsx3.init()
 
 # Speak the given text aloud
