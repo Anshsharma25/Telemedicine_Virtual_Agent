@@ -1,134 +1,60 @@
-'''
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-PHASE 1: Taking input from the user and passing it to the model in the form of Text or Audio.
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-'''
+from agents import symptom_agent, hospital_agent
+from speech_utils import capture_audio_input, speak_text
 import os
-import requests
-import speech_recognition as sr
-import pyttsx3
 from dotenv import load_dotenv
-from langchain_google_genai import ChatGoogleGenerativeAI
 
-# Load environment variables
 load_dotenv()
-GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 
-# Initialize the Gemini model and text-to-speech engine
-model = ChatGoogleGenerativeAI(model='gemini-1.5-flash-latest')
-tts_engine = pyttsx3.init()
-
-# Speak the given text aloud
-def speak_text(text):
-    print("🗣️ Speaking the simplified explanation...")
-    tts_engine.say(text)
-    tts_engine.runAndWait()
-
-# Capture audio input and convert to text
-def capture_audio_input():
-    recognizer = sr.Recognizer()
-    microphone = sr.Microphone()
-    print("🎙️ Listening... Please speak.")
-
-    with microphone as source:
-        recognizer.adjust_for_ambient_noise(source)
-        audio = recognizer.listen(source)
-
-    try:
-        text = recognizer.recognize_google(audio)
-        print(f"📝 Recognized Text: {text}")
-        return text
-    except sr.UnknownValueError:
-        print("❌ Could not understand the audio.")
-        return None
-    except sr.RequestError:
-        print("❌ Could not request results. Check your internet.")
-        return None
-
-# Convert address to latitude and longitude using Google Geocoding API
-def get_coordinates_from_address(address):
-    geocoding_url = f"https://maps.googleapis.com/maps/api/geocode/json?address={address}&key={GOOGLE_MAPS_API_KEY}"
-    response = requests.get(geocoding_url)
-    data = response.json()
-
-    if data["status"] == "OK":
-        lat = data["results"][0]["geometry"]["location"]["lat"]
-        lng = data["results"][0]["geometry"]["location"]["lng"]
-        print(f"📍 Location from Address: Latitude = {lat}, Longitude = {lng}")
-        return lat, lng
-    else:
-        print("❌ Failed to get coordinates from the address.")
-        return None, None
-
-# Get top 5 hospitals using Google Maps API
-def find_nearby_hospitals(lat, lng):
-    url = (
-        f"https://maps.googleapis.com/maps/api/place/nearbysearch/json"
-        f"?location={lat},{lng}"
-        f"&radius=50000"
-        f"&type=hospital"
-        f"&key={GOOGLE_MAPS_API_KEY}"
-    )
-    response = requests.get(url)
-    data = response.json()
-    results = data.get("results", [])
-
-    if not results:
-        return "🚫 No hospitals found nearby."
-
-    response_lines = ["\n🏥 Top 5 Hospitals within 50 km:\n"]
-    for place in results[:5]:
-        name = place.get("name")
-        rating = place.get("rating", "N/A")
-        address = place.get("vicinity", "Address not available")
-        response_lines.append(f"- {name} | ⭐ {rating} | 📍 {address}")
-    
-    return "\n".join(response_lines)
-
-# Main logic
 def main():
-    input_type = input("Enter input type (text/audio): ").strip().lower()
+    print("\n🤖 Welcome to the AI Health Assistant")
+    print("=======================================")
+    print("You can describe your symptoms via text or voice.")
+    
+    input_mode = input("\n📝 Enter input type (text/audio): ").strip().lower()
 
-    if input_type == "text":
-        user_input = input("Enter the Issue: ")
-    elif input_type == "audio":
+    if input_mode == "audio":
         user_input = capture_audio_input()
         if not user_input:
-            print("❌ No valid audio input detected.")
+            print("❌ No valid audio detected. Exiting...")
             return
+    elif input_mode == "text":
+        user_input = input("🧠 Describe your symptoms: ").strip()
     else:
-        print("❌ Invalid input type. Please enter 'text' or 'audio'.")
+        print("❌ Invalid input type. Please choose 'text' or 'audio'.")
         return
 
-    # Step 1: Get model's main response
-    result = model.invoke(user_input)
-    original_response = result.content
-    print("\n🤖 Agent response:", original_response)
+    # Agent 1: Symptom Intake
+    print("\n🤖 Invoking Symptom Intake Agent...")
+    symptom_response = symptom_agent.invoke({
+        "input": user_input,
+        "chat_history": []  # Add empty chat history to satisfy agent input
+    })
 
-    # Step 2: Ask model to explain the response in simple terms
-    explanation_prompt = f"Explain this response in very simple terms suitable for a 5-year-old:\n\n{original_response}"
-    simple_explanation = model.invoke(explanation_prompt).content
-    print("\n🗣️ Simplified Explanation:")
-    print(simple_explanation)
+    diagnosis = symptom_response.get("output", "⚠️ No response from symptom agent.")
+    print("\n💬 Diagnosis or Guidance:")
+    print(diagnosis)
+    speak_text(diagnosis)
 
-    # Step 3: Speak the simplified explanation
-    speak_text(simple_explanation)
+    # Ask about hospital locator
+    follow_up = input("\n🗺️ Do you want to find top hospitals near you? (yes/no): ").strip().lower()
+    if follow_up in ["yes", "y"]:
+        address = input("📍 Enter your full address (with city): ").strip()
+        if not address:
+            print("⚠️ Address is required to find hospitals.")
+            return
 
-    # # Follow-up question
-    # follow_up = input("\n🤖 Do you want to find the top 5 hospitals near your area? (yes/no): ").strip().lower()
-    # if follow_up in ["yes", "y"]:
-    #     address = input("\nPlease provide your address: ").strip()
-    #     lat, lng = get_coordinates_from_address(address)
-    #     if lat is None or lng is None:
+        print("\n🤖 Invoking Hospital Finder Agent...")
+        hospital_response = hospital_agent.invoke({
+            "input": f"Find top hospitals near {address}",
+            "chat_history": []
+        })
 
-    
-    #         print("⚠️ Unable to find hospitals without a valid location.")
-    #         return
-    #     hospital_list = find_nearby_hospitals(lat, lng)
-    #     print(hospital_list)
-    #     speak_text(hospital_list)
-    # else:
-    #     print("👍 Okay! Let me know if you need anything else.")
+        hospital_list = hospital_response.get("output", "⚠️ No hospital data returned.")
+        print("\n🏥 Nearby Hospitals:")
+        print(hospital_list)
+        speak_text(hospital_list)
+    else:
+        print("👍 Alright. Feel free to ask anything else later!")
 
 if __name__ == "__main__":
     main()
