@@ -1,0 +1,17 @@
+🧱 Agent Task Flow (LangChain / CrewAI Style)
+➤ PatientInputAgent
+Accepts input: text/audio/image
+
+Classifies: general vs urgent vs emergency
+
+➤ DoctorAvailabilityTask
+Queries available doctors (in under 5 mins)
+
+➤ ConnectionTask
+Sends notification to all matched doctors
+
+Waits for a doctor to accept
+
+➤ CallAgent
+Initiates connection (Twilio / Jitsi) within 5 mins
+

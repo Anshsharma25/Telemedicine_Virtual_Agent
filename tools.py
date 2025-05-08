@@ -4,10 +4,19 @@ import os
 import requests
 import pyttsx3
 import speech_recognition as sr
+import json
+from uuid import uuid4
+from twilio.rest import Client
 
 # Load environment variables
 load_dotenv()
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
+
+# Twilio config
+TWILIO_SID = os.getenv("TWILIO_SID")
+TWILIO_AUTH = os.getenv("TWILIO_AUTH")
+TWILIO_PHONE = os.getenv("TWILIO_PHONE")
+client = Client(TWILIO_SID, TWILIO_AUTH)
 
 # TTS engine setup
 tts_engine = pyttsx3.init()
@@ -51,3 +60,44 @@ def find_hospitals(location: str) -> str:
     return "\n".join(lines)
 
 find_hospitals_tool = find_hospitals
+
+# Tool 3: Check availability of doctor
+@tool
+def check_doctor_availability() -> str:
+    """Check if a doctor is available."""
+    try:
+        with open("doctors.json", "r") as file:
+            doctors = json.load(file)
+        for doctor in doctors:
+            if doctor['status'] == 'available':
+                return doctor['name']
+        return "No doctor is available."
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+check_doctor_availability_tool = check_doctor_availability
+
+
+# Tool 4: Generate a meeting link
+@tool
+def generate_meet_link_tool() -> str:
+    """Generate a unique Jitsi Meet link."""
+    return f"https://meet.jit.si/telemed-{uuid4()}"
+
+generate_meet_link_tool = generate_meet_link_tool
+
+# Tool 5: Send meeting link to user via SMS
+@tool
+def send_meet_sms_tool(phone_and_link: str) -> str:
+    """Send a video call link to a user's phone via SMS using Twilio.
+    Input format: '<phone>,<link>'"""
+    try:
+        phone, link = phone_and_link.split(',')
+        client.messages.create(
+            body=f"Doctor is ready. Join here: {link.strip()}",
+            from_=TWILIO_PHONE,
+            to=phone.strip()
+        )
+        return f"Message sent to {phone.strip()}"
+    except Exception as e:
+        return f"Error: {str(e)}"
