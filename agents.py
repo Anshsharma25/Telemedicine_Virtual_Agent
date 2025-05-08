@@ -7,9 +7,9 @@ from tools import (
     find_hospitals_tool,
     check_doctor_availability_tool,
     generate_meet_link_tool,
-    send_meet_sms_tool
+    send_meet_sms_tool,
+    ai_doctor_api_tool  # Directly importing the function
 )
-
 
 from dotenv import load_dotenv
 import os
@@ -17,9 +17,9 @@ import os
 # Shared LLM
 llm = ChatGoogleGenerativeAI(model="gemini-1.5-flash-latest")
 
-# Agent 1: Symptom Intake Agent (No tools, just conversation)
+# Agent 1: Symptom Intake Agent (NOW WITH TOOL)
 symptom_agent = initialize_agent(
-    tools=[],  # No tools used
+    tools=[ai_doctor_api_tool],  # Using the function directly
     llm=llm,
     agent=AgentType.CONVERSATIONAL_REACT_DESCRIPTION,
     verbose=True,

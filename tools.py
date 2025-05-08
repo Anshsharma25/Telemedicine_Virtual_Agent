@@ -40,6 +40,33 @@ def get_coordinates(address: str) -> str:
 
 get_coordinates_tool = get_coordinates
 
+'''
+Symptom to integrate the AI Doctor Symptom Checker API from RapidAPI
+'''
+@tool
+def ai_doctor_api_tool(message: str) -> str:
+    """Chat with a medical AI assistant. Input should be a health-related question or symptom description."""
+    url = "https://ai-doctor-api-ai-medical-chatbot-healthcare-ai-assistant.p.rapidapi.com/chat?noqueue=1"
+    headers = {
+        "Content-Type": "application/json",
+        "x-rapidapi-host": "ai-doctor-api-ai-medical-chatbot-healthcare-ai-assistant.p.rapidapi.com",
+        "x-rapidapi-key": os.getenv("RAPIDAPI_KEY")  # Better practice: keep key in .env
+    }
+    payload = {
+        "message": message,
+        "specialization": "general",
+        "language": "en"
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=payload)
+        if response.status_code != 200:
+            return f"API Error: {response.status_code} - {response.text}"
+
+        return response.json().get("message", "No response from API.")
+    except Exception as e:
+        return f"Error calling AI Doctor API: {str(e)}"
+
 # Tool 2: Find hospitals near coordinates
 @tool
 def find_hospitals(location: str) -> str:
