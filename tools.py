@@ -11,8 +11,6 @@ from twilio.rest import Client
 # Load environment variables
 load_dotenv()
 GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
-
-# Twilio config
 TWILIO_SID = os.getenv("TWILIO_SID")
 TWILIO_AUTH = os.getenv("TWILIO_AUTH")
 TWILIO_PHONE = os.getenv("TWILIO_PHONE")
@@ -38,11 +36,7 @@ def get_coordinates(address: str) -> str:
         return f"{loc['lat']},{loc['lng']}"
     return "Invalid address."
 
-get_coordinates_tool = get_coordinates
-
-'''
-Symptom to integrate the AI Doctor Symptom Checker API from RapidAPI
-'''
+# Tool 2: Symptom Checker using AI Doctor API
 @tool
 def ai_doctor_api_tool(message: str) -> str:
     """Chat with a medical AI assistant. Input should be a health-related question or symptom description."""
@@ -50,7 +44,7 @@ def ai_doctor_api_tool(message: str) -> str:
     headers = {
         "Content-Type": "application/json",
         "x-rapidapi-host": "ai-doctor-api-ai-medical-chatbot-healthcare-ai-assistant.p.rapidapi.com",
-        "x-rapidapi-key": os.getenv("RAPIDAPI_KEY")  # Better practice: keep key in .env
+        "x-rapidapi-key": os.getenv("RAPIDAPI_KEY")
     }
     payload = {
         "message": message,
@@ -67,7 +61,7 @@ def ai_doctor_api_tool(message: str) -> str:
     except Exception as e:
         return f"Error calling AI Doctor API: {str(e)}"
 
-# Tool 2: Find hospitals near coordinates
+# Tool 3: Find hospitals near coordinates
 @tool
 def find_hospitals(location: str) -> str:
     """Find top 5 hospitals near a given 'lat,lng'."""
@@ -86,9 +80,7 @@ def find_hospitals(location: str) -> str:
         lines.append(f"- {name} | ⭐ {rating} | 📍 {addr}")
     return "\n".join(lines)
 
-find_hospitals_tool = find_hospitals
-
-# Tool 3: Check availability of doctor
+# Tool 4: Check availability of doctor
 @tool
 def check_doctor_availability() -> str:
     """Check if a doctor is available."""
@@ -102,22 +94,16 @@ def check_doctor_availability() -> str:
     except Exception as e:
         return f"Error: {str(e)}"
 
-check_doctor_availability_tool = check_doctor_availability
-
-
-# Tool 4: Generate a meeting link
+# Tool 5: Generate a meeting link
 @tool
 def generate_meet_link_tool() -> str:
     """Generate a unique Jitsi Meet link."""
     return f"https://meet.jit.si/telemed-{uuid4()}"
 
-generate_meet_link_tool = generate_meet_link_tool
-
-# Tool 5: Send meeting link to user via SMS
+# Tool 6: Send meeting link to user via SMS
 @tool
 def send_meet_sms_tool(phone_and_link: str) -> str:
-    """Send a video call link to a user's phone via SMS using Twilio.
-    Input format: '<phone>,<link>'"""
+    """Send a video call link to a user's phone via SMS using Twilio."""
     try:
         phone, link = phone_and_link.split(',')
         client.messages.create(
@@ -128,3 +114,11 @@ def send_meet_sms_tool(phone_and_link: str) -> str:
         return f"Message sent to {phone.strip()}"
     except Exception as e:
         return f"Error: {str(e)}"
+
+# ✅ Fix: Assign tool references to variables for external import
+get_coordinates_tool = get_coordinates
+ai_doctor_api_tool = ai_doctor_api_tool
+find_hospitals_tool = find_hospitals
+check_doctor_availability_tool = check_doctor_availability
+generate_meet_link_tool = generate_meet_link_tool
+send_meet_sms_tool = send_meet_sms_tool

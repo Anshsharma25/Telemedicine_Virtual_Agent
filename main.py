@@ -1,4 +1,4 @@
-from agents import symptom_agent, hospital_agent, connect_agent
+from agents import symptom_agent, connect_agent
 from speech_utils import capture_audio_input, speak_text
 import os
 from dotenv import load_dotenv
@@ -10,50 +10,38 @@ def main():
     print("=======================================")
     print("You can describe your symptoms via text or voice.")
     
-    input_mode = input("\n📝 Enter input type (text/audio): ").strip().lower()
-
-    if input_mode == "audio":
-        user_input = capture_audio_input()
-        if not user_input:
-            print("❌ No valid audio detected. Exiting...")
-            return
-    elif input_mode == "text":
+    mode = input("\n📝 Input type (text/audio): ").strip().lower()
+    if mode == "audio":
+        user_input = capture_audio_input() or ""
+    elif mode == "text":
         user_input = input("🧠 Describe your symptoms: ").strip()
     else:
-        print("❌ Invalid input type. Please choose 'text' or 'audio'.")
+        print("❌ Please choose 'text' or 'audio'.")
         return
 
-    # Agent 1: Symptom Intake
-    print("\n🤖 Invoking Symptom Intake Agent...")
-    symptom_response = symptom_agent.invoke({
-        "input": user_input,
-        "chat_history": []  # Add empty chat history to satisfy agent input
-    })
+    # 1️⃣ Symptom Intake
+    print("\n🤖 Checking your symptoms...")
+    resp = symptom_agent.invoke({"input": user_input, "chat_history": []})
+    diag = resp.get("output", "")
+    print(f"\n💬 Diagnosis:\n{diag}")
+    speak_text(diag)
 
-    diagnosis = symptom_response.get("output", "⚠️ No response from symptom agent.")
-    print("\n💬 Diagnosis or Guidance:")
-    print(diagnosis)
-    speak_text(diagnosis)
-
-    # Ask if the user wants to connect with a doctor
-    connect = input("\n🩺 Do you want to connect with a real-time doctor? (yes/no): ").strip().lower()
-    
-    if connect in ["yes", "y"]:
-        print("\n🔄 Connecting with Doctor via Connect Agent...")
-
-        # Invoke Connect Agent (Agent 3) for doctor connection
-        connect_response = connect_agent.invoke({
-            "input": "Connect me with a real-time doctor.",
-            "chat_history": []  # Add chat history as needed
+    # 2️⃣ If serious → Generate meet link only
+    if "immediate medical attention" in diag.lower() or "life-threatening" in diag.lower():
+        print("\n⚠️ Serious condition detected! Generating your meet link...")
+        conn = connect_agent.invoke({
+            "input": "Check availability and generate meet link",
+            "chat_history": []
         })
-        
-        # Handle the response from Connect Agent
-        meet_link = connect_response.get("output", "⚠️ Could not connect to a doctor.")
-        print("\n📞 Doctor Connection Info:")
-        print(meet_link)
-        speak_text(meet_link)
+        output = conn.get("output", "")
+        # Assume the link is the last token in the agent's answer
+        meet_link = output.strip().split()[-1]
+        print(f"\n🔗 Your Jitsi Meet link (please share this with your doctor):\n{meet_link}")
+        print("🕒 Your doctor will join you there in a few minutes.")
+        speak_text(f"Your consultation link is {meet_link}. Your doctor will connect in a few minutes.")
     else:
-        print("👍 Okay! Let me know if you need anything else later.")
+        print("\n👍 Symptoms look non-critical. Please rest and monitor, and reach out if things worsen.")
+        speak_text("Your symptoms appear mild. Rest and monitor.")
 
 if __name__ == "__main__":
     main()
