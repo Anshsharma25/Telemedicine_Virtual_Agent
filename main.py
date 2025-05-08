@@ -1,4 +1,4 @@
-from agents import symptom_agent, hospital_agent
+from agents import symptom_agent, hospital_agent, connect_agent
 from speech_utils import capture_audio_input, speak_text
 import os
 from dotenv import load_dotenv
@@ -35,26 +35,25 @@ def main():
     print(diagnosis)
     speak_text(diagnosis)
 
-    # Ask about hospital locator
-    follow_up = input("\n🗺️ Do you want to find top hospitals near you? (yes/no): ").strip().lower()
-    if follow_up in ["yes", "y"]:
-        address = input("📍 Enter your full address (with city): ").strip()
-        if not address:
-            print("⚠️ Address is required to find hospitals.")
-            return
+    # Ask if the user wants to connect with a doctor
+    connect = input("\n🩺 Do you want to connect with a real-time doctor? (yes/no): ").strip().lower()
+    
+    if connect in ["yes", "y"]:
+        print("\n🔄 Connecting with Doctor via Connect Agent...")
 
-        print("\n🤖 Invoking Hospital Finder Agent...")
-        hospital_response = hospital_agent.invoke({
-            "input": f"Find top hospitals near {address}",
-            "chat_history": []
+        # Invoke Connect Agent (Agent 3) for doctor connection
+        connect_response = connect_agent.invoke({
+            "input": "Connect me with a real-time doctor.",
+            "chat_history": []  # Add chat history as needed
         })
-
-        hospital_list = hospital_response.get("output", "⚠️ No hospital data returned.")
-        print("\n🏥 Nearby Hospitals:")
-        print(hospital_list)
-        speak_text(hospital_list)
+        
+        # Handle the response from Connect Agent
+        meet_link = connect_response.get("output", "⚠️ Could not connect to a doctor.")
+        print("\n📞 Doctor Connection Info:")
+        print(meet_link)
+        speak_text(meet_link)
     else:
-        print("👍 Alright. Feel free to ask anything else later!")
+        print("👍 Okay! Let me know if you need anything else later.")
 
 if __name__ == "__main__":
     main()
