@@ -5,8 +5,10 @@ from dotenv import load_dotenv
 from langchain.agents import initialize_agent, AgentType
 from langchain.chat_models import ChatOpenAI
 from tools import ai_doctor_api_tool, check_doctor_availability_tool, generate_meet_link_tool
+from langchain_openai import ChatOpenAI
 
 load_dotenv()
+
 
 # Instantiate LLM via OpenRouter endpoint
 llm = ChatOpenAI(
