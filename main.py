@@ -3,6 +3,7 @@ from speech_utils import capture_audio_input, speak_text
 import os
 from dotenv import load_dotenv
 
+# Load environment variables
 load_dotenv()
 
 def main():
@@ -19,23 +20,25 @@ def main():
         print("❌ Please choose 'text' or 'audio'.")
         return
 
-    # 1️⃣ Symptom Intake
+    # Step 1: Symptom Intake
     print("\n🤖 Checking your symptoms...")
-    resp = symptom_agent.invoke({"input": user_input, "chat_history": []})
-    diag = resp.get("output", "")
-    print(f"\n💬 Diagnosis:\n{diag}")
-    speak_text(diag)
+    response = symptom_agent.invoke({
+        "input": user_input,
+        "chat_history": []
+    })
+    diagnosis = response.get("output", "")
+    print(f"\n💬 Diagnosis:\n{diagnosis}")
+    speak_text(diagnosis)
 
-    # 2️⃣ If serious → Generate meet link only
-    if "immediate medical attention" in diag.lower() or "life-threatening" in diag.lower():
+    # Step 2: Serious case check → Generate meet link
+    if "immediate medical attention" in diagnosis.lower() or "life-threatening" in diagnosis.lower():
         print("\n⚠️ Serious condition detected! Generating your meet link...")
-        conn = connect_agent.invoke({
+        connection = connect_agent.invoke({
             "input": "Check availability and generate meet link",
             "chat_history": []
         })
-        output = conn.get("output", "")
-        # Assume the link is the last token in the agent's answer
-        meet_link = output.strip().split()[-1]
+        output = connection.get("output", "")
+        meet_link = output.strip().split()[-1]  # Extract last token as link
         print(f"\n🔗 Your Jitsi Meet link (please share this with your doctor):\n{meet_link}")
         print("🕒 Your doctor will join you there in a few minutes.")
         speak_text(f"Your consultation link is {meet_link}. Your doctor will connect in a few minutes.")
