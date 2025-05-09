@@ -3,13 +3,14 @@ import os
 from dotenv import load_dotenv
 from langchain.agents import initialize_agent, AgentType
 from langchain.chat_models import ChatOpenAI
-from tools import ai_doctor_api_tool, check_doctor_availability_tool, generate_meet_link_tool
+from langchain.tools import tool , DuckDuckGoSearchRun
+from tools import  check_doctor_availability_tool, generate_meet_link_tool ,search_tool# ai_doctor_api_tool,,
 from langchain_openai import ChatOpenAI
 
 load_dotenv()
 
 # Instantiate LLM via OpenRouter endpoint
-llm = ChatOpenAI(
+llm = ChatOpenAI(   
     model_name="mistralai/mistral-7b-instruct",      # your Mistral instruct model
     openai_api_base="https://openrouter.ai/api/v1",   # OpenRouter proxy URL
     openai_api_key=os.getenv("OPENROUTER_API_KEY"),
@@ -18,7 +19,7 @@ llm = ChatOpenAI(
 )
 
 symptom_agent = initialize_agent(
-    tools=[ai_doctor_api_tool],
+    tools=[search_tool],
     llm=llm,
     agent_type=AgentType.CONVERSATIONAL_REACT_DESCRIPTION,
     verbose=True,

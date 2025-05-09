@@ -4,10 +4,8 @@ import json
 import requests
 from uuid import uuid4
 from dotenv import load_dotenv
-from langchain.tools import tool
+from langchain.tools import tool , DuckDuckGoSearchRun
 import pyttsx3
-
-# Load environment variables
 load_dotenv()
 
 # Text-to-Speech toggle
@@ -22,26 +20,34 @@ else:
     def speak_text(text: str):
         print("🗣️ (TTS Disabled):", text)
 
+
+'''
+Use the duckduck search tool to search for medical information.
+'''
+# Create an instance of the search tool
+search_tool = DuckDuckGoSearchRun()
+
+
 # 1) AI Doctor API tool
-@tool
-def ai_doctor_api_tool(message: str) -> str:
-    """
-    Call the AI Doctor API to get a medical consultation response for the provided message.
-    """
-    url = "https://ai-doctor-api-ai-medical-chatbot-healthcare-ai-assistant.p.rapidapi.com/chat?noqueue=1"
-    headers = {
-        "Content-Type": "application/json",
-        "x-rapidapi-host": "ai-doctor-api-ai-medical-chatbot-healthcare-ai-assistant.p.rapidapi.com",
-        "x-rapidapi-key": os.getenv("RAPIDAPI_KEY"),
-    }
-    payload = {"message": message, "specialization": "general", "language": "en"}
-    try:
-        r = requests.post(url, headers=headers, json=payload)
-        if r.status_code != 200:
-            return f"API Error: {r.status_code}"
-        return r.json().get("message", "No response from API.")
-    except Exception as e:
-        return f"Error calling AI Doctor API: {e}"
+# @tool
+# def ai_doctor_api_tool(message: str) -> str:
+#     """
+#     Call the AI Doctor API to get a medical consultation response for the provided message.
+#     """
+#     url = "https://ai-doctor-api-ai-medical-chatbot-healthcare-ai-assistant.p.rapidapi.com/chat?noqueue=1"
+#     headers = {
+#         "Content-Type": "application/json",
+#         "x-rapidapi-host": "ai-doctor-api-ai-medical-chatbot-healthcare-ai-assistant.p.rapidapi.com",
+#         "x-rapidapi-key": os.getenv("RAPIDAPI_KEY"),
+#     }
+#     payload = {"message": message, "specialization": "general", "language": "en"}
+#     try:
+#         r = requests.post(url, headers=headers, json=payload)
+#         if r.status_code != 200:
+#             return f"API Error: {r.status_code}"
+#         return r.json().get("message", "No response from API.")
+#     except Exception as e:
+#         return f"Error calling AI Doctor API: {e}"
 
 # 2) Check doctor availability tool
 @tool
