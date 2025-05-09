@@ -1,0 +1,12 @@
+[
+    {
+        "name": "Dr. Priya Sharma",
+        "specialization": "General Physician",
+        "status": "available"
+    },
+    {
+        "name": "Dr. Raj Mehta",
+        "specialization": "Cardiologist",
+        "status": "unavailable"
+    }
+]
