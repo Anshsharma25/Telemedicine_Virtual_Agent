@@ -1,42 +1,39 @@
-from langchain.tools import tool
-from dotenv import load_dotenv
+# tools.py
+
 import os
-import requests
-import pyttsx3
 import json
+import requests
 from uuid import uuid4
-
-from langchain_community.llms import HuggingFaceEndpoint
-
+from dotenv import load_dotenv
+from langchain.tools import tool
+import pyttsx3
 
 # Load environment variables
 load_dotenv()
 
-# Use HF model (e.g., PMC_LLAMA_13B)
-llm = HuggingFaceEndpoint(
-    repo_id="axiong/PMC_LLaMA_13B",
-    temperature=0.7,
-    max_new_tokens=512,
-    huggingfacehub_api_token=os.getenv("HUGGINGFACEHUB_API_TOKEN")
-)
+# Text-to-Speech toggle
+enable_tts = True
+if enable_tts:
+    tts_engine = pyttsx3.init()
+    def speak_text(text: str):
+        print("🗣️ Speaking:", text)
+        tts_engine.say(text)
+        tts_engine.runAndWait()
+else:
+    def speak_text(text: str):
+        print("🗣️ (TTS Disabled):", text)
 
-
-# TTS engine setup (not a tool)
-tts_engine = pyttsx3.init()
-def speak_text(text: str):
-    print("🗣️ Speaking:", text)
-    tts_engine.say(text)
-    tts_engine.runAndWait()
-
-# Tool 1: Symptom Checker using AI Doctor API
+# 1) AI Doctor API tool
 @tool
 def ai_doctor_api_tool(message: str) -> str:
-    """Use AI Doctor API to analyze symptoms and return diagnosis."""
+    """
+    Call the AI Doctor API to get a medical consultation response for the provided message.
+    """
     url = "https://ai-doctor-api-ai-medical-chatbot-healthcare-ai-assistant.p.rapidapi.com/chat?noqueue=1"
     headers = {
         "Content-Type": "application/json",
         "x-rapidapi-host": "ai-doctor-api-ai-medical-chatbot-healthcare-ai-assistant.p.rapidapi.com",
-        "x-rapidapi-key": os.getenv("RAPIDAPI_KEY")
+        "x-rapidapi-key": os.getenv("RAPIDAPI_KEY"),
     }
     payload = {"message": message, "specialization": "general", "language": "en"}
     try:
@@ -47,12 +44,17 @@ def ai_doctor_api_tool(message: str) -> str:
     except Exception as e:
         return f"Error calling AI Doctor API: {e}"
 
-# Tool 2: Check availability of doctor
+# 2) Check doctor availability tool
 @tool
-def check_doctor_availability(dummy: str) -> str:
-    """Check if any doctor is available. Input is ignored."""
+def check_doctor_availability_tool(dummy: str) -> str:
+    """
+    Reads doctor.json and returns the name of an available doctor, or an error message.
+    """
+    path = "doctor.json"
+    if not os.path.exists(path):
+        return "Doctor availability data not found."
     try:
-        with open("doctor.json") as f:
+        with open(path) as f:
             for doc in json.load(f):
                 if doc.get("status") == "available":
                     return doc["name"]
@@ -60,25 +62,10 @@ def check_doctor_availability(dummy: str) -> str:
     except Exception as e:
         return f"Error: {e}"
 
-# Tool 3: Generate a meeting link
+# 3) Generate Jitsi meet link tool
 @tool
 def generate_meet_link_tool(dummy: str) -> str:
-    """Generate a secure Jitsi Meet link. Input is ignored."""
+    """
+    Generates a unique Jitsi Meet link for telemedicine consultations.
+    """
     return f"https://meet.jit.si/telemed-{uuid4()}"
-
-# If needed later, uncomment and wrap these similarly:
-# @tool
-# def get_coordinates_tool(address: str) -> str:
-#     """Get latitude and longitude from an address using Google Maps API."""
-#     ...
-
-# @tool
-# def find_hospitals_tool(location: str) -> str:
-#     """Find top hospitals near a given lat,long location using Google Maps API."""
-#     ...
-
-# Expose tools
-# get_coordinates_tool = get_coordinates
-# find_hospitals_tool = find_hospitals
-check_doctor_availability_tool = check_doctor_availability
-generate_meet_link_tool = generate_meet_link_tool

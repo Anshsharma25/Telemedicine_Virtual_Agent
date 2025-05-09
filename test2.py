@@ -1,6 +1,6 @@
 import openai
 
-openai.api_key = "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"
+openai.api_key = "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"
 openai.api_base = "https://openrouter.ai/api/v1"
 
 # Initial system message

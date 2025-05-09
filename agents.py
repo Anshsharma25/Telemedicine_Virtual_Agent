@@ -1,39 +1,32 @@
-import os
-from langchain.agents import initialize_agent, AgentType
-from langchain_openai import ChatOpenAI
-from tools import (
-    ai_doctor_api_tool,
-    check_doctor_availability_tool,
-    generate_meet_link_tool,
-)
+# agents.py
 
-# Load environment variables
+import os
 from dotenv import load_dotenv
+from langchain.agents import initialize_agent, AgentType
+from langchain.chat_models import ChatOpenAI
+from tools import ai_doctor_api_tool, check_doctor_availability_tool, generate_meet_link_tool
+
 load_dotenv()
 
-# Initialize OpenAI-based LLM for symptom diagnosis and doctor availability
+# Instantiate LLM via OpenRouter endpoint
 llm = ChatOpenAI(
-    model="mistralai/mistral-7b-instruct",  # Replace with any supported OpenRouter model
-    base_url="https://openrouter.ai/api/v1",
-    api_key=os.getenv("OPENROUTER_API_KEY"),
+    model_name="mistralai/mistral-7b-instruct",      # your Mistral instruct model
+    openai_api_base="https://openrouter.ai/api/v1",   # OpenRouter proxy URL
+    openai_api_key=os.getenv("OPENROUTER_API_KEY"),
     temperature=0.7,
     max_tokens=512
 )
 
-# Symptom agent (diagnosis agent)
 symptom_agent = initialize_agent(
-    tools=[ai_doctor_api_tool],  # Tools to analyze symptoms (using AI Doctor API)
+    tools=[ai_doctor_api_tool],
     llm=llm,
     agent_type=AgentType.CONVERSATIONAL_REACT_DESCRIPTION,
-    verbose=True,  # For verbose output during agent execution
+    verbose=True,
 )
 
-# Connect agent (availability + meet link generation)
 connect_agent = initialize_agent(
-    tools=[check_doctor_availability_tool, generate_meet_link_tool],  # Tools to check availability and generate meet links
+    tools=[check_doctor_availability_tool, generate_meet_link_tool],
     llm=llm,
     agent_type=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION,
-    verbose=True,  # For verbose output during agent execution
+    verbose=True,
 )
-
-# This script doesn't execute anything directly, it's meant to be imported by main.py
