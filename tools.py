@@ -6,9 +6,20 @@ import pyttsx3
 import json
 from uuid import uuid4
 
+from langchain_community.llms import HuggingFaceEndpoint
+
+
 # Load environment variables
 load_dotenv()
-GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
+
+# Use HF model (e.g., PMC_LLAMA_13B)
+llm = HuggingFaceEndpoint(
+    repo_id="axiong/PMC_LLaMA_13B",
+    temperature=0.7,
+    max_new_tokens=512,
+    huggingfacehub_api_token=os.getenv("HUGGINGFACEHUB_API_TOKEN")
+)
+
 
 # TTS engine setup (not a tool)
 tts_engine = pyttsx3.init()
