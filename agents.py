@@ -1,5 +1,4 @@
 # agents.py
-
 import os
 from dotenv import load_dotenv
 from langchain.agents import initialize_agent, AgentType
@@ -8,7 +7,6 @@ from tools import ai_doctor_api_tool, check_doctor_availability_tool, generate_m
 from langchain_openai import ChatOpenAI
 
 load_dotenv()
-
 
 # Instantiate LLM via OpenRouter endpoint
 llm = ChatOpenAI(
