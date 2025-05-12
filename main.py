@@ -1,11 +1,13 @@
 # main.py
+
 import os
 import re
 from dotenv import load_dotenv
-from agents import symptom_agent, connect_agent
+
+from agents import symptom_chain, connect_agent
+from tools import search_tool
 from speech_utils import capture_audio_input, speak_text
 
-# Load environment variables
 load_dotenv()
 
 def main():
@@ -27,47 +29,46 @@ def main():
         speak_text("I couldn't hear anything. Please try again.")
         return
 
-    print("\n🤖 Checking your symptoms...")
+    print("\n🔎 Looking up your symptoms for context...")
+    # Manually call the search tool
     try:
-        response = symptom_agent.invoke(
-            {"input": user_input, "chat_history": []},
-            handle_parsing_errors=True
-        )
-        diagnosis = response.get("output", "") if isinstance(response, dict) else str(response)
-
-        if not diagnosis:
-            print("\n❌ No diagnosis available. Please try again later.")
-            speak_text("Sorry, I couldn't retrieve a diagnosis.")
-            return
-
-        print(f"\n💬 Diagnosis:\n{diagnosis}")
-        speak_text(diagnosis)
+        search_results = search_tool.run(user_input)
     except Exception as e:
-        print(f"\n❌ Error processing symptoms: {e}")
+        print(f"❌ Search failed: {e}")
+        search_results = "No additional context available."
+
+    print("\n🤖 Generating your diagnosis...")
+    try:
+        # Run the chain directly—returns raw three-point text
+        diagnosis = symptom_chain.run({
+            "input": user_input,
+            "search_results": search_results
+        })
+    except Exception as e:
+        print(f"\n❌ Error generating diagnosis: {e}")
         speak_text("There was an issue processing your symptoms. Please try again later.")
         return
 
-    if "immediate medical attention" in diagnosis.lower() or "life-threatening" in diagnosis.lower():
+    print(f"\n💬 Diagnosis:\n{diagnosis}")
+    speak_text(diagnosis)
+
+    lower_diag = diagnosis.lower()
+    if "immediate medical attention" in lower_diag or "life-threatening" in lower_diag:
         print("\n⚠️ Serious condition detected! Generating your meet link...")
         try:
-            connection = connect_agent.invoke(
-                {"input": "Check availability and generate meet link", "chat_history": []}
-            )
-            output = connection.get("output", "") if isinstance(connection, dict) else str(connection)
-            urls = re.findall(r'https?://\S+', output)
-            meet_link = urls[0] if urls else "No link found"
-
-            if meet_link == "No link found":
-                print("\n❌ Failed to generate meet link.")
-                speak_text("I couldn't generate the meet link. Please consult a professional.")
-                return
-
-            print(f"\n🔗 Consultation link:\n{meet_link}")
-            speak_text(f"Your consultation link is {meet_link}.")
+            connection_output = connect_agent.run("Check availability and generate meet link")
+            urls = re.findall(r'https?://\S+', connection_output)
+            meet_link = urls[0] if urls else None
         except Exception as e:
             print(f"\n❌ Error generating meet link: {e}")
-            speak_text("There was an issue generating your consultation link.")
-            return
+            meet_link = None
+
+        if not meet_link:
+            print("❌ Failed to generate meet link.")
+            speak_text("I couldn't generate the meet link. Please consult a professional.")
+        else:
+            print(f"\n🔗 Consultation link:\n{meet_link}")
+            speak_text(f"Your consultation link is {meet_link}.")
     else:
         print("\n👍 Symptoms look non-critical. Please rest and monitor.")
         speak_text("Your symptoms appear mild. Rest and monitor.")
