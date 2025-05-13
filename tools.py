@@ -1,11 +1,12 @@
-# tools.py
 import os
 import json
 import requests
 from uuid import uuid4
 from dotenv import load_dotenv
-from langchain.tools import tool , DuckDuckGoSearchRun
+from langchain_community.tools import tool
+from serpapi import GoogleSearch
 import pyttsx3
+
 load_dotenv()
 
 # Text-to-Speech toggle
@@ -20,36 +21,8 @@ else:
     def speak_text(text: str):
         print("🗣️ (TTS Disabled):", text)
 
-
-'''
-Use the duckduck search tool to search for medical information.
-'''
-# Create an instance of the search tool
-search_tool = DuckDuckGoSearchRun()
-
-
-# 1) AI Doctor API tool
-# @tool
-# def ai_doctor_api_tool(message: str) -> str:
-#     """
-#     Call the AI Doctor API to get a medical consultation response for the provided message.
-#     """
-#     url = "https://ai-doctor-api-ai-medical-chatbot-healthcare-ai-assistant.p.rapidapi.com/chat?noqueue=1"
-#     headers = {
-#         "Content-Type": "application/json",
-#         "x-rapidapi-host": "ai-doctor-api-ai-medical-chatbot-healthcare-ai-assistant.p.rapidapi.com",
-#         "x-rapidapi-key": os.getenv("RAPIDAPI_KEY"),
-#     }
-#     payload = {"message": message, "specialization": "general", "language": "en"}
-#     try:
-#         r = requests.post(url, headers=headers, json=payload)
-#         if r.status_code != 200:
-#             return f"API Error: {r.status_code}"
-#         return r.json().get("message", "No response from API.")
-#     except Exception as e:
-#         return f"Error calling AI Doctor API: {e}"
-
-# 2) Check doctor availability tool
+# 1) Check doctor availability tool
+tool_tip = "Reads doctor.json and returns an available doctor's name."
 @tool
 def check_doctor_availability_tool(dummy: str) -> str:
     """
@@ -67,10 +40,43 @@ def check_doctor_availability_tool(dummy: str) -> str:
     except Exception as e:
         return f"Error: {e}"
 
-# 3) Generate Jitsi meet link tool
+# 2) Jitsi Meet link generator tool
 @tool
 def generate_meet_link_tool(dummy: str) -> str:
     """
     Generates a unique Jitsi Meet link for telemedicine consultations.
     """
     return f"https://meet.jit.si/telemed-{uuid4()}"
+
+# 3) Medical symptom search via SerpAPI
+doc_search = "Uses SerpAPI to fetch symptom info from trusted medical sites."
+@tool
+def search_medical(query: str) -> str:
+    """
+    Searches trusted medical sites (Mayo Clinic, WebMD, NHS) for the given symptom using SerpAPI and returns top 3 results.
+    """
+    API_KEY = os.getenv("SERPAPI_API_KEY")
+    if not API_KEY:
+        return "Error: SERPAPI_API_KEY not set in environment."
+
+    params = {
+        "engine":      "google",
+        "q":           f"{query} site:mayoclinic.org OR site:webmd.com OR site:nhs.uk",
+        "api_key":     API_KEY,
+        "num":         5,
+    }
+    client = GoogleSearch(params)
+    data   = client.get_dict()
+    hits   = data.get("organic_results", [])
+    if not hits:
+        return "No results found."
+
+    results = []
+    for item in hits[:3]:
+        title = item.get("title","").strip()
+        snippet = item.get("snippet",""
+                           ).strip()
+        link = item.get("link",""
+                         ).strip()
+        results.append(f"🔹 {title}\n{snippet}\n🔗 {link}")
+    return "\n\n".join(results)

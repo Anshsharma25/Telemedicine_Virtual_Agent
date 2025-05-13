@@ -4,8 +4,7 @@ import os
 import re
 from dotenv import load_dotenv
 
-from agents import symptom_chain, connect_agent
-from tools import search_tool
+from agents import symptom_chain, connect_agent, search_agent
 from speech_utils import capture_audio_input, speak_text
 
 load_dotenv()
@@ -30,16 +29,15 @@ def main():
         return
 
     print("\n🔎 Looking up your symptoms for context...")
-    # Manually call the search tool
     try:
-        search_results = search_tool.run(user_input)
+        # Use the SerpAPI-backed search agent
+        search_results = search_agent.run(user_input)
     except Exception as e:
         print(f"❌ Search failed: {e}")
         search_results = "No additional context available."
 
     print("\n🤖 Generating your diagnosis...")
     try:
-        # Run the chain directly—returns raw three-point text
         diagnosis = symptom_chain.run({
             "input": user_input,
             "search_results": search_results
