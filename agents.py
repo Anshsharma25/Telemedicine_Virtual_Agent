@@ -1,11 +1,9 @@
 import os
 from dotenv import load_dotenv
-
 from langchain_openai import ChatOpenAI
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from langchain.agents import initialize_agent, AgentType
-
 from tools import (
     search_medical,
     check_doctor_availability_tool,
@@ -14,7 +12,7 @@ from tools import (
 
 load_dotenv()
 
-# ─── LLM Setup ─────────────────────────────────────────────
+# ─────────────────────────────────── LLM Setup ─────────────────────────────────────────────
 llm = ChatOpenAI(
     model_name="mistralai/mistral-7b-instruct",
     openai_api_base="https://openrouter.ai/api/v1",
@@ -23,7 +21,7 @@ llm = ChatOpenAI(
     max_tokens=512,
 )
 
-# ─── Custom Prompt ─────────────────────────────────────────
+# ─────────────────────────────────── Custom Prompt ─────────────────────────────────────────
 PROMPT = PromptTemplate(
     input_variables=["input", "search_results"],
     template="""
@@ -43,7 +41,7 @@ User symptoms: {input}
 """.strip()
 )
 
-# ─── Symptom Chain ─────────────────────────────────────────
+# ─────────────────────────────────── Symptom Chain ─────────────────────────────────────────
 # This chain takes the symptom description and search results as inputs
 symptom_chain = LLMChain(
     llm=llm,
@@ -51,7 +49,7 @@ symptom_chain = LLMChain(
     verbose=True
 )
 
-# ─── Doctor Connection Agent ───────────────────────────────
+# ─────────────────────────────────── Doctor Connection Agent ───────────────────────────────
 connect_agent = initialize_agent(
     tools=[check_doctor_availability_tool, generate_meet_link_tool],
     llm=llm,
@@ -60,7 +58,7 @@ connect_agent = initialize_agent(
     verbose=True,
 )
 
-# ─── Medical Search Agent ──────────────────────────────────
+# ─────────────────────────────────── Medical Search Agent ──────────────────────────────────
 search_agent = initialize_agent(
     tools=[search_medical],
     llm=llm,
