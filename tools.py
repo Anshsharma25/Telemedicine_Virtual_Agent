@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from langchain_community.tools import tool
 from serpapi import GoogleSearch
 import pyttsx3
+from roboflow import Roboflow
 
 load_dotenv()
 
@@ -80,3 +81,23 @@ def search_medical(query: str) -> str:
                          ).strip()
         results.append(f"🔹 {title}\n{snippet}\n🔗 {link}")
     return "\n\n".join(results)
+
+@tool
+def analyze_medical_image(image_path: str) -> str:
+    """Analyze a medical image using the Roboflow model and return detected conditions."""
+    if not os.path.exists(image_path):
+        return f"❌ Image not found: {image_path}"
+
+    rf = Roboflow(api_key="UWOU2vqDDSIsfBphWxJU")
+    project = rf.workspace().project("health-bqeyj")
+    model = project.version(1).model
+
+    prediction = model.predict(image_path).json()
+    results = []
+
+    for pred in prediction["predictions"]:
+        class_name = pred["class"]
+        confidence = round(pred["confidence"] * 100, 2)
+        results.append(f"🩺 Detected: {class_name} ({confidence}% confidence)")
+
+    return "\n".join(results) if results else "✅ No issues detected in the image."

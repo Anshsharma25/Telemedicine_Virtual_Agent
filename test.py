@@ -8,7 +8,6 @@ model = project.version(1).model
 # Predict an image
 prediction = model.predict(r"C:\Users\HP\Desktop\k.jpg").json()
 
-
 # Display result clearly
 for pred in prediction["predictions"]:
     class_name = pred["class"]

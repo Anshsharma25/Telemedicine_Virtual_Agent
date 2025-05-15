@@ -1,5 +1,3 @@
-# main.py
-
 import os
 import re
 from dotenv import load_dotenv
@@ -12,15 +10,47 @@ load_dotenv()
 def main():
     print("\n🤖 Welcome to the AI Health Assistant")
     print("=======================================")
-    print("You can describe your symptoms via text or voice.")
-    
-    mode = input("\n📝 Input type (text/audio): ").strip().lower()
+    print("You can describe your symptoms via text, voice, or image.")
+
+    mode = input("\n📝 Input type (text/audio/image): ").strip().lower()
+
     if mode == "audio":
         user_input = capture_audio_input() or ""
+
     elif mode == "text":
         user_input = input("🧠 Describe your symptoms: ").strip()
+
+    elif mode == "image":
+        image_path = input("📷 Enter image path: ").strip()
+        if not image_path:
+            print("❌ No image path provided.")
+            speak_text("I need an image path to proceed.")
+            return
+
+        print("\n🔍 Analyzing image...")
+        try:
+            from tools import analyze_medical_image
+            image_result = analyze_medical_image(image_path)
+            print(f"\n📋 Image Analysis Result:\n{image_result}")
+            speak_text(image_result)
+
+            # Extract the detected condition from the result
+            match = re.search(r"Detected:\s*(.*?)\s*\(", image_result)
+            if match:
+                user_input = match.group(1)
+                print(f"\n📌 Interpreted symptom from image: {user_input}")
+            else:
+                print("❌ Could not interpret condition from image.")
+                speak_text("I could not understand the image result.")
+                return
+
+        except Exception as e:
+            print(f"❌ Image analysis failed: {e}")
+            speak_text("There was a problem analyzing your image.")
+            return
+
     else:
-        print("❌ Please choose 'text' or 'audio'.")
+        print("❌ Please choose 'text', 'audio' or 'image'.")
         return
 
     if not user_input:
@@ -30,7 +60,6 @@ def main():
 
     print("\n🔎 Looking up your symptoms for context...")
     try:
-        # Use the SerpAPI-backed search agent
         search_results = search_agent.run(user_input)
     except Exception as e:
         print(f"❌ Search failed: {e}")
