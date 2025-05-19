@@ -13,6 +13,7 @@ def main():
     print("You can describe your symptoms via text, voice, or image.")
 
     mode = input("\n📝 Input type (text/audio/image): ").strip().lower()
+    print("You can describe your symptoms in Detail other you dont get better result.")
 
     if mode == "audio":
         user_input = capture_audio_input() or ""
