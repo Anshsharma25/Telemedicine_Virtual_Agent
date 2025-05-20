@@ -36,7 +36,7 @@ When a user describes a symptom, ALWAYS respond in 3 parts:
 5. What kind of doctor needs to consult 
 6. Type of test recommendations 
 7. If we get to know the person area : example noida and area let say noida: provide doctors/pharmacy information available
-
+ 
 If you looked up information, here are your search results:
 {search_results}
 
