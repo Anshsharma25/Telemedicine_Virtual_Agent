@@ -51,7 +51,7 @@ User symptoms: {input}
 symptom_chain = LLMChain(
     llm=llm,
     prompt=PROMPT,
-    verbose=True
+    verbose=True 
 )
 
 # ─────────────────────────────────── Doctor Connection Agent ───────────────────────────────
@@ -59,7 +59,7 @@ connect_agent = initialize_agent(
     tools=[check_doctor_availability_tool, generate_meet_link_tool],
     llm=llm,
     agent_type=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION,
-    handle_parsing_errors=True,  # ← Add this line
+    handle_parsing_errors=True,  
     verbose=True,
 )
 
