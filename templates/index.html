@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Telemedicine Card</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(to bottom right, #00c9a7, #7cf4b4);
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .card {
+      background: linear-gradient(135deg, #d2fff4, #aaf4c7);
+      border-radius: 30px;
+      display: flex;
+      padding: 30px 40px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      max-width: 900px;
+      width: 100%;
+      gap: 40px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .card img.doctor {
+      width: 450px;
+      height: auto;
+    }
+
+    .form-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-section h1 {
+      font-size: 2.5rem;
+      color: #084848;
+      margin-bottom: 10px;
+    }
+
+    .form-section p {
+      font-size: 1.2rem;
+      color: #084848;
+      margin-bottom: 20px;
+    }
+
+    .input-row {
+      display: flex;
+      align-items: center;
+      background-color: #015c5c;
+      border-radius: 20px;
+      padding: 10px 20px;
+      margin-bottom: 20px;
+      color: white;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .input-row input[type="text"] {
+      flex: 1;
+      border: none;
+      background: transparent;
+      color: white;
+      font-size: 1rem;
+      outline: none;
+    }
+
+    .input-row input[type="file"] {
+      display: none;
+    }
+
+    .icon-btn {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+    }
+
+    .icon-btn img {
+      width: 24px;
+      height: 24px;
+    }
+
+    .submit-button {
+      background: linear-gradient(to right, #04c8c8, #4fd1b1);
+      border: none;
+      border-radius: 30px;
+      padding: 15px 30px;
+      font-size: 1rem;
+      font-weight: bold;
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .submit-button:hover {
+      background: linear-gradient(to right, #04b0b0, #3dc2a3);
+    }
+
+    .result-box {
+      margin-top: 20px;
+      background-color: #ffffffcc;
+      padding: 20px 25px;
+      border-radius: 20px;
+      color: #084848;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      max-height: 300px;
+      overflow-y: auto;
+      display: none;
+      white-space: pre-wrap;
+    }
+
+    .result-box::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .result-box::-webkit-scrollbar-thumb {
+      background-color: #cccccc;
+      border-radius: 4px;
+    }
+
+    .result-box::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .thinking-animation {
+      display: inline-block;
+    }
+
+    .dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      margin: 0 2px;
+      background-color: #084848;
+      border-radius: 50%;
+      animation: bounce 1.2s infinite ease-in-out both;
+    }
+
+    .dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes bounce {
+      0%, 80%, 100% {
+        transform: scale(0);
+      }
+      40% {
+        transform: scale(1);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <img src="/static/images/doctor.png" alt="Doctor Illustration" class="doctor" />
+
+    <div class="form-section">
+      <h1>Telemedicine</h1>
+      <p>Enter your symptoms or upload an image</p>
+
+      <div class="input-row">
+        <input id="symptomInput" type="text" placeholder="Describe your symptoms..." />
+
+        <button class="icon-btn" id="micButton" title="Start Voice Input">
+          <img src="/static/images/microphone.png" alt="Mic Icon" />
+        </button>
+
+        <label class="icon-btn" for="imageInput">
+          <img src="/static/images/picture.png" alt="Upload Icon" />
+        </label>
+        <input type="file" id="imageInput" accept="image/*" />
+      </div>
+
+      <button class="submit-button" onclick="submitData()">Submit</button>
+
+      <div id="resultBox" class="result-box">
+        <strong>Result:</strong> Waiting for response...
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function showThinkingAnimation() {
+      return '<div class="thinking-animation">' +
+        '<span class="dot"></span>' +
+        '<span class="dot"></span>' +
+        '<span class="dot"></span>' +
+        '</div>';
+    }
+
+    async function submitData() {
+      const text = document.getElementById("symptomInput").value.trim();
+      const imageFile = document.getElementById("imageInput").files[0];
+      const resultBox = document.getElementById("resultBox");
+
+      const formData = new FormData();
+      let userInput = "";
+
+      if (imageFile) {
+        formData.append("mode", "image");
+        formData.append("image", imageFile);
+        userInput = "User uploaded an image.";
+      } else if (text) {
+        formData.append("mode", "text");
+        formData.append("text", text);
+        userInput = `User said: "${text}"`;
+      } else {
+        resultBox.innerHTML = "<strong>Error:</strong> Please enter symptoms or upload an image.";
+        resultBox.style.display = "block";
+        return;
+      }
+
+      resultBox.innerHTML = `${userInput}\n\n<strong>Thinking</strong> ${showThinkingAnimation()}`;
+      resultBox.style.display = "block";
+
+      try {
+        const response = await fetch("http://127.0.0.1:5000/analyze", {
+          method: "POST",
+          body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+          resultBox.innerHTML = `${userInput}\n\n<strong>Error:</strong> ${data.error}`;
+        } else {
+          resultBox.innerHTML = `${userInput}\n\n<strong>Diagnosis:</strong> ${data.diagnosis}`;
+          if (data.meet_link) {
+            resultBox.innerHTML += `\n\n<a href="${data.meet_link}" target="_blank">Join Google Meet</a>`;
+          }
+        }
+
+      } catch (error) {
+        resultBox.innerHTML = `${userInput}\n\n<strong>Error:</strong> ${error.message}`;
+      }
+    }
+
+    // Microphone voice input
+    let recognition;
+    const micButton = document.getElementById("micButton");
+
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+
+      micButton.addEventListener('click', () => {
+        recognition.start();
+        micButton.querySelector('img').style.filter = 'brightness(0.5)';
+      });
+
+      recognition.onresult = (event) => {
+        const speechResult = event.results[0][0].transcript;
+        document.getElementById("symptomInput").value = speechResult;
+        micButton.querySelector('img').style.filter = 'none';
+      };
+
+      recognition.onerror = (event) => {
+        alert("Voice recognition error: " + event.error);
+        micButton.querySelector('img').style.filter = 'none';
+      };
+
+      recognition.onend = () => {
+        micButton.querySelector('img').style.filter = 'none';
+      };
+    } else {
+      micButton.addEventListener('click', () => {
+        alert("Sorry, your browser does not support speech recognition.");
+      });
+    }
+  </script>
+</body>
+</html>
