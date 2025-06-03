@@ -1,8 +1,8 @@
 from flask import Flask, request, jsonify, render_template
 import os
 import re
-from main import capture_audio_input #analyze_medical_image
-from tools import *
+from main import capture_audio_input
+from tools import analyze_medical_image
 from agents import search_agent, symptom_chain, connect_agent
 from dotenv import load_dotenv
 
@@ -10,8 +10,8 @@ load_dotenv()
 app = Flask(__name__)
 
 @app.route("/")
-def home(): 
-    return render_template("index.html")  # This will serve index.html from /templates
+def home():
+    return render_template("index.html")  # Serve index.html from /templates
 
 @app.route("/analyze", methods=["POST"])
 def analyze_symptoms():
@@ -34,7 +34,11 @@ def analyze_symptoms():
             os.makedirs("temp", exist_ok=True)
             image_file.save(image_path)
 
-            image_result = analyze_medical_image(image_path)
+            category = request.form.get("image_category", "").strip().lower()
+            if category not in ['skin', 'dental', 'eye', 'hair']:
+                return jsonify({"error": "Invalid or missing image_category. Must be one of skin, dental, eye, hair."}), 400
+
+            image_result = analyze_medical_image(image_path, category)
             match = re.search(r"Detected:\s*(.*?)\s*\(", image_result)
             if match:
                 user_input = match.group(1)

@@ -7,6 +7,8 @@ from langchain_community.tools import tool
 from serpapi import GoogleSearch
 import pyttsx3
 from roboflow import Roboflow
+from langchain_core.tools import tool  # Use this import instead
+
 
 load_dotenv()
 
@@ -51,6 +53,7 @@ def generate_meet_link_tool(dummy: str) -> str:
 
 # 3) Medical symptom search via SerpAPI
 doc_search = "Uses SerpAPI to fetch symptom info from trusted medical sites."
+
 @tool
 def search_medical(query: str) -> str:
     """
@@ -82,22 +85,79 @@ def search_medical(query: str) -> str:
         results.append(f"🔹 {title}\n{snippet}\n🔗 {link}")
     return "\n\n".join(results)
 
-@tool
-def analyze_medical_image(image_path: str) -> str:
-    """Analyze a medical image using the Roboflow model and return detected conditions."""
+
+
+import os
+from roboflow import Roboflow
+
+def analyze_medical_image(image_path: str, category: str) -> str:
+    """Analyze a medical image using multiple Roboflow models based on category."""
+
     if not os.path.exists(image_path):
         return f"❌ Image not found: {image_path}"
 
-    rf = Roboflow(api_key="UWOU2vqDDSIsfBphWxJU")
-    project = rf.workspace().project("health-bqeyj")
-    model = project.version(1).model
+    rf = Roboflow(api_key="UWOU2vqDDSIsfBphWxJU")  # Replace with your actual key
 
-    prediction = model.predict(image_path).json()
+    # Define model info per category (manual category input)
+    category_models = {
+        "skin": {
+            "model_id": "health-bqeyj",
+            "version": 1,
+            "valid_classes": ["Ringworm", "Basal Cell Carcinoma", "Eczema", "Psoriasis", "Acne"]
+        },
+        "dental": {
+            "model_id": "dental-gjlh1",
+            "version": 1,
+            "valid_classes": ["Tooth Decay", "Cavity", "Plaque", "Healthy Tooth"]
+        },
+        "eye": {
+            "model_id": "classification_data",
+            "version": 1,
+            "valid_classes": ["Cataract", "Glaucoma", "Normal", "Red Eye"]
+        },
+        "hair": {
+            "model_id": "hair-disease-detection-o2ok0-vqwpb",
+            "version": 1,
+            "valid_classes": ["Alopecia", "Dandruff", "Psoriasis", "Folliculitis", "Healthy Scalp"]
+        }
+    }
+
+    if category not in category_models:
+        return f"❌ Invalid category '{category}'. Please choose from {list(category_models.keys())}"
+
+    model_info = category_models[category]
+
+    try:
+        project = rf.workspace().project(model_info["model_id"])
+        model = project.version(model_info["version"]).model
+        prediction = model.predict(image_path).json()
+    except Exception as e:
+        return f"❌ Failed to analyze image with {category} model: {e}"
+
     results = []
+    max_confidence = 0
+    final_prediction = None
 
-    for pred in prediction["predictions"]:
-        class_name = pred["class"]
-        confidence = round(pred["confidence"] * 100, 2)
+    for pred in prediction.get("predictions", []):
+        class_name = pred.get("class")
+        confidence = round(pred.get("confidence", 0) * 100, 2)
+
+        # Ignore classes not in valid classes list
+        if class_name not in model_info["valid_classes"]:
+            continue
+
         results.append(f"🩺 Detected: {class_name} ({confidence}% confidence)")
 
-    return "\n".join(results) if results else "✅ No issues detected in the image."
+        if confidence > max_confidence:
+            max_confidence = confidence
+            final_prediction = (class_name, confidence)
+
+    if not results:
+        return "✅ No valid medical conditions detected in the image."
+
+    summary = "\n".join(results)
+    if final_prediction:
+        name, conf = final_prediction
+        summary += f"\n\n🔬 Based on the highest confidence, primary concern is: **{name}** ({conf}% confidence)"
+
+    return summary

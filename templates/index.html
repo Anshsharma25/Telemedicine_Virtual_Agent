@@ -88,6 +88,17 @@
       height: 24px;
     }
 
+    select#imageCategory {
+      padding: 8px;
+      border-radius: 10px;
+      border: 1px solid #015c5c;
+      margin-bottom: 20px;
+      width: 100%;
+      font-size: 1rem;
+      color: #084848;
+      font-weight: bold;
+    }
+
     .submit-button {
       background: linear-gradient(to right, #04c8c8, #4fd1b1);
       border: none;
@@ -183,6 +194,18 @@
         <input type="file" id="imageInput" accept="image/*" />
       </div>
 
+      <!-- Image category dropdown -->
+      <label for="imageCategory" style="color: #084848; font-weight: bold; margin-bottom: 10px; display: block;">
+        Select Image Category:
+      </label>
+      <select id="imageCategory">
+        <option value="">-- Select category --</option>
+        <option value="skin">Skin</option>
+        <option value="dental">Dental</option>
+        <option value="eye">Eye</option>
+        <option value="hair">Hair</option>
+      </select>
+
       <button class="submit-button" onclick="submitData()">Submit</button>
 
       <div id="resultBox" class="result-box">
@@ -203,14 +226,21 @@
     async function submitData() {
       const text = document.getElementById("symptomInput").value.trim();
       const imageFile = document.getElementById("imageInput").files[0];
+      const category = document.getElementById("imageCategory").value;
       const resultBox = document.getElementById("resultBox");
 
       const formData = new FormData();
       let userInput = "";
 
       if (imageFile) {
+        if (!category) {
+          resultBox.innerHTML = "<strong>Error:</strong> Please select an image category.";
+          resultBox.style.display = "block";
+          return;
+        }
         formData.append("mode", "image");
         formData.append("image", imageFile);
+        formData.append("image_category", category);
         userInput = "User uploaded an image.";
       } else if (text) {
         formData.append("mode", "text");
@@ -241,7 +271,6 @@
             resultBox.innerHTML += `\n\n<a href="${data.meet_link}" target="_blank">Join Google Meet</a>`;
           }
         }
-
       } catch (error) {
         resultBox.innerHTML = `${userInput}\n\n<strong>Error:</strong> ${error.message}`;
       }

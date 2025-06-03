@@ -1,4 +1,3 @@
-import os
 import re
 from dotenv import load_dotenv
 
@@ -13,7 +12,7 @@ def main():
     print("You can describe your symptoms via text, voice, or image.")
 
     mode = input("\n📝 Input type (text/audio/image): ").strip().lower()
-    print("You can describe your symptoms in Detail other you dont get better result.")
+    print("You can describe your symptoms in detail; otherwise, you may not get better results.")
 
     if mode == "audio":
         user_input = capture_audio_input() or ""
@@ -28,14 +27,20 @@ def main():
             speak_text("I need an image path to proceed.")
             return
 
+        category = input("🗂️ Enter image category (skin/dental/eye/hair): ").strip().lower()
+        if category not in ['skin', 'dental', 'eye', 'hair']:
+            print(f"❌ Invalid category '{category}'. Please enter one of: skin, dental, eye, hair.")
+            speak_text("Invalid category provided. Please try again.")
+            return
+
         print("\n🔍 Analyzing image...")
         try:
             from tools import analyze_medical_image
-            image_result = analyze_medical_image(image_path)
+            image_result = analyze_medical_image(image_path, category)
             print(f"\n📋 Image Analysis Result:\n{image_result}")
             speak_text(image_result)
 
-            # Extract the detected condition from the result
+            # Extract the detected condition from the image result for symptom processing
             match = re.search(r"Detected:\s*(.*?)\s*\(", image_result)
             if match:
                 user_input = match.group(1)
