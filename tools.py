@@ -87,18 +87,90 @@ def search_medical(query: str) -> str:
 
 
 
+
+# from roboflow import Roboflow
+
+# def analyze_medical_image(image_path: str) -> str:
+#     """Analyze medical image with multiple Roboflow models and aggregate results."""
+
+#     if not os.path.exists(image_path):
+#         return f"❌ Image not found: {image_path}"
+
+#     rf = Roboflow(api_key="UWOU2vqDDSIsfBphWxJU")  # Your Roboflow API key
+
+#     category_models = {
+#         "skin": {
+#             "model_id": "health-bqeyj",
+#             "version": 1,
+#             "valid_classes": ["Ringworm", "Basal Cell Carcinoma", "Eczema", "Psoriasis", "Acne"]
+#         },
+#         "dental": {
+#             "model_id": "dental-gjlh1",
+#             "version": 1,
+#             "valid_classes": ["Tooth Decay", "Cavity", "Plaque", "Healthy Tooth"]
+#         },
+#         "eye": {
+#             "model_id": "classification_data",
+#             "version": 1,
+#             "valid_classes": ["Cataract", "Glaucoma", "Normal", "Red Eye"]
+#         },
+#         "hair": {
+#             "model_id": "hair-disease-detection-o2ok0-vqwpb",
+#             "version": 1,
+#             "valid_classes": ["Alopecia", "Dandruff", "Psoriasis", "Folliculitis", "Healthy Scalp"]
+#         }
+#     }
+
+#     all_results = []
+#     best_prediction = None
+#     max_confidence = 0
+
+#     for cat, model_info in category_models.items():
+#         try:
+#             project = rf.workspace().project(model_info["model_id"])
+#             model = project.version(model_info["version"]).model
+#             prediction = model.predict(image_path).json()
+#         except Exception as e:
+#             all_results.append(f"❌ Failed to analyze with {cat} model: {e}")
+#             continue
+
+#         for pred in prediction.get("predictions", []):
+#             class_name = pred.get("class")
+#             confidence = round(pred.get("confidence", 0) * 100, 2)
+
+#             if class_name not in model_info["valid_classes"]:
+#                 continue
+
+#             all_results.append(f"🩺 [{cat}] Detected: {class_name} ({confidence}% confidence)")
+
+#             if confidence > max_confidence:
+#                 max_confidence = confidence
+#                 best_prediction = (cat, class_name, confidence)
+
+#     if not all_results:
+#         return "✅ No valid medical conditions detected by any model."
+
+#     summary = "\n".join(all_results)
+
+#     if best_prediction:
+#         cat, name, conf = best_prediction
+#         summary += f"\n\n🔬 Highest confidence from '{cat}' model: **{name}** ({conf}%)"
+
+#     return summary
+
+
 import os
+import json
 from roboflow import Roboflow
 
-def analyze_medical_image(image_path: str, category: str) -> str:
-    """Analyze a medical image using multiple Roboflow models based on category."""
+def analyze_medical_image(image_path: str) -> str:
+    """Analyze medical image with multiple Roboflow models and aggregate results."""
 
     if not os.path.exists(image_path):
         return f"❌ Image not found: {image_path}"
 
-    rf = Roboflow(api_key="UWOU2vqDDSIsfBphWxJU")  # Replace with your actual key
+    rf = Roboflow(api_key="UWOU2vqDDSIsfBphWxJU")  # Your Roboflow API key
 
-    # Define model info per category (manual category input)
     category_models = {
         "skin": {
             "model_id": "health-bqeyj",
@@ -122,42 +194,39 @@ def analyze_medical_image(image_path: str, category: str) -> str:
         }
     }
 
-    if category not in category_models:
-        return f"❌ Invalid category '{category}'. Please choose from {list(category_models.keys())}"
-
-    model_info = category_models[category]
-
-    try:
-        project = rf.workspace().project(model_info["model_id"])
-        model = project.version(model_info["version"]).model
-        prediction = model.predict(image_path).json()
-    except Exception as e:
-        return f"❌ Failed to analyze image with {category} model: {e}"
-
-    results = []
+    all_results = []
+    best_prediction = None
     max_confidence = 0
-    final_prediction = None
 
-    for pred in prediction.get("predictions", []):
-        class_name = pred.get("class")
-        confidence = round(pred.get("confidence", 0) * 100, 2)
-
-        # Ignore classes not in valid classes list
-        if class_name not in model_info["valid_classes"]:
+    for cat, model_info in category_models.items():
+        try:
+            project = rf.workspace().project(model_info["model_id"])
+            model = project.version(model_info["version"]).model
+            prediction = model.predict(image_path).json()
+        except Exception as e:
+            all_results.append(f"❌ Failed to analyze with {cat} model: {e}")
             continue
 
-        results.append(f"🩺 Detected: {class_name} ({confidence}% confidence)")
+        for pred in prediction.get("predictions", []):
+            class_name = pred.get("class")
+            confidence = round(pred.get("confidence", 0) * 100, 2)
 
-        if confidence > max_confidence:
-            max_confidence = confidence
-            final_prediction = (class_name, confidence)
+            if class_name not in model_info["valid_classes"]:
+                continue
 
-    if not results:
-        return "✅ No valid medical conditions detected in the image."
+            all_results.append(f"🩺 [{cat}] Detected: {class_name} ({confidence}% confidence)")
 
-    summary = "\n".join(results)
-    if final_prediction:
-        name, conf = final_prediction
-        summary += f"\n\n🔬 Based on the highest confidence, primary concern is: **{name}** ({conf}% confidence)"
+            if confidence > max_confidence:
+                max_confidence = confidence
+                best_prediction = (cat, class_name, confidence)
+
+    if not all_results:
+        return "✅ No valid medical conditions detected by any model."
+
+    summary = "\n".join(all_results)
+
+    if best_prediction:
+        cat, name, conf = best_prediction
+        summary += f"\n\n🔬 Highest confidence from '{cat}' model: **{name}** ({conf}%)"
 
     return summary

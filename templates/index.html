@@ -22,7 +22,7 @@
       display: flex;
       padding: 30px 40px;
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-      max-width: 900px;
+      max-width: 1100px;
       width: 100%;
       gap: 40px;
       align-items: center;
@@ -163,14 +163,15 @@
       animation-delay: 0.4s;
     }
 
-    @keyframes bounce {
-      0%, 80%, 100% {
-        transform: scale(0);
-      }
-      40% {
-        transform: scale(1);
-      }
-    }
+@keyframes bounce { 
+  0%, 80%, 100% {
+    transform: scale(0);
+  }
+  40% {
+    transform: scale(1);
+  }
+}
+
   </style>
 </head>
 <body>
@@ -194,7 +195,6 @@
         <input type="file" id="imageInput" accept="image/*" />
       </div>
 
-      <!-- Image category dropdown -->
       <label for="imageCategory" style="color: #084848; font-weight: bold; margin-bottom: 10px; display: block;">
         Select Image Category:
       </label>
@@ -245,7 +245,7 @@
       } else if (text) {
         formData.append("mode", "text");
         formData.append("text", text);
-        userInput = `User said: "${text}"`;
+        userInput = `User said: \"${text}\"`;
       } else {
         resultBox.innerHTML = "<strong>Error:</strong> Please enter symptoms or upload an image.";
         resultBox.style.display = "block";
@@ -256,7 +256,7 @@
       resultBox.style.display = "block";
 
       try {
-        const response = await fetch("http://127.0.0.1:5000/analyze", {
+        const response = await fetch("/analyze", {
           method: "POST",
           body: formData
         });
@@ -276,7 +276,6 @@
       }
     }
 
-    // Microphone voice input
     let recognition;
     const micButton = document.getElementById("micButton");
 
