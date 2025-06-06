@@ -27,19 +27,12 @@ def is_casual_chat(text):
     return any(phrase in text for phrase in casual_phrases)
 
 def speak_response(response):
-    """
-    Extract plain text from LangChain response before speaking,
-    to avoid TypeError: 'AIMessage' object is not subscriptable.
-    """
-    # If response is an AIMessage or has a 'content' attribute
     if hasattr(response, "content"):
         text_to_speak = response.content
-    # If response is a dict with 'content'
     elif isinstance(response, dict) and "content" in response:
         text_to_speak = response["content"]
     else:
-        text_to_speak = str(response)  # fallback
-    
+        text_to_speak = str(response)
     speak_text(text_to_speak)
     return text_to_speak
 
@@ -86,7 +79,6 @@ def main():
                 speak_text("I need an image path to proceed.")
                 continue
 
-            
             print("\n🔍 Analyzing image...")
             try:
                 from tools import analyze_medical_image
@@ -100,7 +92,6 @@ def main():
                     print(f"\n📌 Interpreted symptom from image: {condition}")
                     user_input = condition
                 else:
-                    # If not found, fallback: pick first detected condition line if any
                     detected_match = re.search(r"Detected:\s*(.*?)\s*\(", image_result)
                     if detected_match:
                         user_input = detected_match.group(1)
@@ -124,7 +115,6 @@ def main():
             speak_text("I couldn't hear anything. Please try again.")
             continue
 
-        # Handle casual chat quickly
         if is_casual_chat(user_input):
             casual_reply = "Hello! I'm an AI, so I don't have feelings, but I'm here and ready to assist you. How can I help you today?"
             print(f"\n💬 Assistant: {casual_reply}")
@@ -132,7 +122,6 @@ def main():
             chat_history.append((user_input, casual_reply))
             continue
 
-        # Ask for location
         user_location = input("\n📍 Enter your location (e.g., Noida, Mumbai): ").strip()
         if check_exit(user_location):
             print("👋 Exiting...")
@@ -147,10 +136,29 @@ def main():
             print(f"❌ Search failed: {e}")
             search_results = "No additional context available."
 
+        print("\n🧾 Asking follow-up questions...")
+        try:
+            from agents import followup_chain
+            followups = followup_chain.run({"symptom": user_input})
+            print(f"\n❓ Please answer these follow-up questions first:\n {followups}")
+            speak_text("Please answer these follow-up questions one by one.")
+
+            followup_answers = input("\n📝 Your answers (briefly respond in one go or summarized form): ").strip()
+            if check_exit(followup_answers):
+                print("👋 Exiting...")
+                print_chat_history(chat_history)
+                break
+
+            combined_input = f"{user_input}\n\nPatient's follow-up answers:\n{followup_answers}"
+
+        except Exception as e:
+            print(f"❌ Error during follow-up phase: {e}")
+            combined_input = user_input
+
         print("\n🤖 Generating your diagnosis...")
         try:
             diagnosis_response = symptom_chain.run({
-                "input": user_input,
+                "input": combined_input,
                 "search_results": search_results,
                 "user_location": user_location
             })
@@ -161,9 +169,6 @@ def main():
             speak_text("There was an issue processing your symptoms. Please try again later.")
             continue
 
-        #print(f"\n💬 Diagnosis:\n{diagnosis}")
-
-        # Save this interaction to chat history
         chat_history.append((user_input, diagnosis))
 
         lower_diag = diagnosis.lower()
