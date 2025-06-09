@@ -1,7 +1,6 @@
 import re
 from dotenv import load_dotenv
-
-from agents import symptom_chain, connect_agent, search_agent
+from agents import symptom_chain, connect_agent, search_agent  # Removed followup_chain import
 from speech_utils import capture_audio_input, speak_text
 
 load_dotenv()
@@ -16,15 +15,6 @@ def print_chat_history(history):
     for i, (inp, resp) in enumerate(history, 1):
         print(f"{i}. You: {inp}")
         print(f"   Assistant: {resp}\n")
-
-def is_casual_chat(text):
-    casual_phrases = [
-        "how are you", "hi", "hello", "hey", "good morning", "good evening",
-        "what's up", "how's it going", "how do you do", "how have you been",
-        "bye", "exit", "quit", "thanks", "thank you"
-    ]
-    text = text.lower()
-    return any(phrase in text for phrase in casual_phrases)
 
 def speak_response(response):
     if hasattr(response, "content"):
@@ -115,13 +105,6 @@ def main():
             speak_text("I couldn't hear anything. Please try again.")
             continue
 
-        if is_casual_chat(user_input):
-            casual_reply = "Hello! I'm an AI, so I don't have feelings, but I'm here and ready to assist you. How can I help you today?"
-            print(f"\n💬 Assistant: {casual_reply}")
-            speak_text(casual_reply)
-            chat_history.append((user_input, casual_reply))
-            continue
-
         user_location = input("\n📍 Enter your location (e.g., Noida, Mumbai): ").strip()
         if check_exit(user_location):
             print("👋 Exiting...")
@@ -136,36 +119,18 @@ def main():
             print(f"❌ Search failed: {e}")
             search_results = "No additional context available."
 
-        print("\n🧾 Asking follow-up questions...")
-        try:
-            from agents import followup_chain
-            followups = followup_chain.run({"symptom": user_input})
-            print(f"\n❓ Please answer these follow-up questions first:\n {followups}")
-            speak_text("Please answer these follow-up questions one by one.")
-
-            followup_answers = input("\n📝 Your answers (briefly respond in one go or summarized form): ").strip()
-            if check_exit(followup_answers):
-                print("👋 Exiting...")
-                print_chat_history(chat_history)
-                break
-
-            combined_input = f"{user_input}\n\nPatient's follow-up answers:\n{followup_answers}"
-
-        except Exception as e:
-            print(f"❌ Error during follow-up phase: {e}")
-            combined_input = user_input
-
-        print("\n🤖 Generating your diagnosis...")
+        # ====== UPDATED: No separate follow-up question step ======
+        print("\n🤖 Generating your follow-up questions and diagnosis in one response...")
         try:
             diagnosis_response = symptom_chain.run({
-                "input": combined_input,
+                "input": user_input,
                 "search_results": search_results,
                 "user_location": user_location
             })
-            print(f"\n💬 Diagnosis:\n{diagnosis_response}")
+            print(f"\n💬 Assistant Response:\n{diagnosis_response}")
             diagnosis = speak_response(diagnosis_response)
         except Exception as e:
-            print(f"\n❌ Error generating diagnosis: {e}")
+            print(f"\n❌ Error generating response: {e}")
             speak_text("There was an issue processing your symptoms. Please try again later.")
             continue
 
