@@ -1,7 +1,8 @@
 import re
 from dotenv import load_dotenv
-from agents import symptom_chain, connect_agent, search_agent  # Removed followup_chain import
+from agents import symptom_chain, connect_agent, search_agent
 from speech_utils import capture_audio_input, speak_text
+from document import *
 
 load_dotenv()
 
@@ -35,7 +36,7 @@ def main():
     chat_history = []
 
     while True:
-        mode = input("📝 Input type (text/audio/image): ").strip().lower()
+        mode = input("📝 Input type (text/audio/image/document): ").strip().lower()
         if check_exit(mode):
             print("👋 Exiting...")
             print_chat_history(chat_history)
@@ -56,6 +57,26 @@ def main():
                 print("👋 Exiting...")
                 print_chat_history(chat_history)
                 break
+
+        elif mode == "document":
+            file_path = input("📄 Enter the patient report PDF path: ").strip()
+
+            if check_exit(file_path):
+                print("👋 Exiting...")
+                print_chat_history(chat_history)
+                break
+
+            try:
+                print("You can describe your symptoms in detail; otherwise, you may not get better results.")
+                user_input = maindocument(file_path)
+                if not user_input:
+                    print("❌ Failed to extract symptoms from the PDF.")
+                    speak_text("Sorry, I could not extract any medical information from the document.")
+                    continue
+            except Exception as e:
+                print(f"❌ Document processing failed: {e}")
+                speak_text("There was a problem processing the document.")
+                continue
 
         elif mode == "image":
             image_path = input("📷 Enter image path: ").strip()
@@ -119,7 +140,6 @@ def main():
             print(f"❌ Search failed: {e}")
             search_results = "No additional context available."
 
-        # ====== UPDATED: No separate follow-up question step ======
         print("\n🤖 Generating your follow-up questions and diagnosis in one response...")
         try:
             diagnosis_response = symptom_chain.run({
