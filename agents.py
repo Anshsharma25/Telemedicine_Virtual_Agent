@@ -1,3 +1,4 @@
+# ─── agent.py ─────────────────────────────────────────────────────────────
 import os
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
@@ -12,7 +13,6 @@ from tools import (
 
 load_dotenv()
 
-# ─────────────────────────────────────────────────────────── LLM Setup ────────────────────────────────────────────────────────────
 llm = ChatOpenAI(
     model_name="mistralai/mistral-7b-instruct",
     openai_api_base="https://openrouter.ai/api/v1",
@@ -21,9 +21,35 @@ llm = ChatOpenAI(
     max_tokens=1800,
 )
 
-# ──────────────────────────────────────────────── Updated Custom Prompt with embedded follow-up questions ───────────────────────────────────────────
-PROMPT = PromptTemplate(
-    input_variables=["input", "search_results", "user_location"],
+# Follow-up question prompt
+FOLLOWUP_PROMPT = PromptTemplate(
+    input_variables=["input"],
+    template="""
+You are a skilled virtual health assistant. Based on the user's initial symptom input, ask 3 medically relevant and focused **follow-up questions** that will help **narrow down the diagnosis**.
+
+Do **not** suggest any diagnosis, medicines, or treatment yet.
+
+User Input:
+"{input}"
+
+---
+
+❓ Follow-up Questions:
+1.
+2.
+3.
+"""
+)
+
+followup_chain = LLMChain(
+    llm=llm,
+    prompt=FOLLOWUP_PROMPT,
+    verbose=True
+)
+
+# Final diagnosis prompt
+FINAL_PROMPT = PromptTemplate(
+    input_variables=["input", "followup_answers", "search_results", "user_location"],
     template="""
 You are a highly skilled and warm virtual medical assistant.
 
@@ -39,15 +65,20 @@ Your job is to give precise, medical responses based on user symptoms. Follow th
 
 ---
 
-❓ *Follow-up questions:*
-- [List 1 to 3 precise, medically relevant questions]
+👤 Initial User Input:
+{input}
 
---- 
+🧠 Follow-up Answers:
+{followup_answers}
+
+📍 Location:
+{user_location}
+
+---
 
 1. 🦠 *Precise Diagnosis or Injury & Explanation*: [Most likely condition, exact medical reason] in India.
 
 2. 👨‍⚕ *Doctor to Consult: Recommend the **exact specialty* the user should consult (e.g., Neurologist, ENT). Then speak as that doctor going forward with clear and confident instructions.
-      NOw Act like that Doctor that give to consult and more condident 
 
 3. 💊 **OTC Medicines & Immediate Remedies based on Diagnosis **: 
    - Include *Generic Name + Brand Name + Price (in INR)*  
@@ -56,7 +87,7 @@ Your job is to give precise, medical responses based on user symptoms. Follow th
    - List any *conditions when it should be avoided*
    - Optional: List *1–2 home remedies* with timing
 
-4. 🛡 *Preventive Measures based on Diagnosis*:
+4. 🗁 *Preventive Measures based on Diagnosis*:
    - What to *avoid*
    - What to *maintain/do, including exact **frequency/timing*
 
@@ -69,12 +100,12 @@ Your job is to give precise, medical responses based on user symptoms. Follow th
    - Recommend easy remedies using everyday items
    - Explain *how, when, and how often* to use them
 
-7. 🧪 *Recommended Tests based on Diagnosis*:
+7. 🦪 *Recommended Tests based on Diagnosis*:
    - Clearly list required tests (e.g., CBC, ESR, X-ray)
    - Mark as *Urgent* or *Optional*
    - Explain *what each test will confirm or rule out*
 
-8. 📅 *Follow-Up Advice*:
+8. 🗕 *Follow-Up Advice*:
    - When to expect recovery
    - When to seek in-person consultation
    - Mention *red flag symptoms* that need urgent care
@@ -84,28 +115,17 @@ Your job is to give precise, medical responses based on user symptoms. Follow th
    - Give *1 nearby doctor clinic* (name, specialty, clinic address, hours, contact number , Fee for per patient)
    - Give *1 nearby pharmacy* (name, address, hours, phone)
 
-ℹ If web search was used, cite:
-*Search Reference:*
+️ Search Reference:
 {search_results}
-
-🧑‍⚕ User said:
-"{input}"
-
-📍 Location:
-{user_location}
-
-Now provide a complete, structured medical response.
 """
 )
 
-# ──────────────────────────────────────────────────────────Symptom Chain ────────────────────────────────────────────────────────
 symptom_chain = LLMChain(
     llm=llm,
-    prompt=PROMPT,
+    prompt=FINAL_PROMPT,
     verbose=True
 )
 
-# ──────────────────────────────────────────────────────── Doctor Connection Agent ────────────────────────────────────────────────
 connect_agent = initialize_agent(
     tools=[check_doctor_availability_tool, generate_meet_link_tool],
     llm=llm,
@@ -114,7 +134,6 @@ connect_agent = initialize_agent(
     verbose=True,
 )
 
-# ───────────────────────────────────────────────────────── Medical Search Agent ──────────────────────────────────────────────────
 search_agent = initialize_agent(
     tools=[search_medical],
     llm=llm,
@@ -122,3 +141,5 @@ search_agent = initialize_agent(
     handle_parsing_errors=True,
     verbose=True,
 )
+
+__all__ = ["symptom_chain", "followup_chain", "connect_agent", "search_agent"]
