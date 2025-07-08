@@ -63,7 +63,7 @@ def create_table():
         print("❌ Failed to create table:", e)
 
 def save_user(name, symptoms, location, diagnosis, user_id):
-    print(f"--> Inserting: {name}, {symptoms}, {location}, {diagnosis}, {user_id}")
+    #print(f"--> Inserting: {name}, {symptoms}, {location}, {diagnosis}, {user_id}")
     conn = psycopg2.connect(
         dbname=DB_NAME,
         user=DB_USER,
