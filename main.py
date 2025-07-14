@@ -5,6 +5,7 @@ from agents import symptom_chain, connect_agent, search_agent, followup_chain
 from speech_utils import capture_audio_input, speak_text
 from document import *
 from Database.DB import *
+from Appointment import show_available_doctors, book_appointment
 
 load_dotenv()
 
@@ -29,7 +30,7 @@ def speak_response(response):
 
 def combine_reports(prev_symptoms, prev_diagnosis, new_symptoms, gender):
     return (
-        f"🧾 Patient Medical History:"
+        f"\U0001F4DE Patient Medical History:\n"
         f"👤 Gender: {gender}\n"
         f"🕓 Previous Symptoms: {prev_symptoms}\n"
         f"🩺 Previous Diagnosis: {prev_diagnosis}\n"
@@ -124,24 +125,13 @@ def main():
             if check_exit(image_path):
                 print("\U0001F44B Exiting...")
                 break
-            if not image_path:
-                print("❌ No image path provided.")
-                speak_text("I need an image path to proceed.")
-                continue
-            print("\n\U0001F50D Analyzing image...")
             try:
                 from tools import analyze_medical_image
                 image_result = analyze_medical_image(image_path)
                 print(f"\n\U0001F4CB Image Analysis Result:\n{image_result}")
                 speak_text(image_result)
                 match = re.search(r"Detected:\s*(.*?)\\(", image_result)
-                if match:
-                    user_input = match.group(1)
-                    print(f"\n\U0001F4CC Interpreted symptom from image: {user_input}")
-                else:
-                    print("❌ Could not interpret condition from image.")
-                    speak_text("I could not understand the image result.")
-                    continue
+                user_input = match.group(1) if match else ""
             except Exception as e:
                 print(f"❌ Image analysis failed: {e}")
                 speak_text("There was a problem analyzing your image.")
@@ -234,6 +224,16 @@ def main():
         else:
             print("\n👍 Symptoms look non-critical. Please rest and monitor.")
             speak_text("Your symptoms appear mild. Rest and monitor.")
+
+        # 🩺 Offer Appointment Booking
+        book_now = input("\n📅 Would you like to book an appointment with a doctor? (yes/no): ").strip().lower()
+        if book_now in {"yes", "y"}:
+            show_available_doctors()
+            doctor_id = input("🆔 Enter Doctor ID to book: ").strip()
+            slot = input("⏰ Enter preferred slot time (e.g., 10:00 AM): ").strip()
+            result = book_appointment(doctor_id, slot)
+            print("\n" + result)
+            speak_text(result)
 
 if __name__ == "__main__":
     main()
