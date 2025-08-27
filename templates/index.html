@@ -1,315 +1,304 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Telemedicine Card</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Telemedicine Chatbot</title>
   <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background: linear-gradient(to bottom right, #00c9a7, #7cf4b4);
-      font-family: 'Segoe UI', sans-serif;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
+    :root{
+      --accent1:#00a88e; --accent2:#008b74; --bg1:linear-gradient(135deg,#00c6a7 0%,#1e90ff 100%);
+      --muted:#666; --card:#fff; --glass: rgba(255,255,255,0.96);
     }
+    html,body{height:100%;margin:0;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg1)}
+    .app {max-width:1200px;margin:24px auto; height:88vh; display:grid; grid-template-columns: 320px 1fr; gap:18px; padding:18px; box-sizing:border-box}
 
-    .card {
-      background: linear-gradient(135deg, #d2fff4, #aaf4c7);
-      border-radius: 30px;
-      display: flex;
-      padding: 30px 40px;
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-      max-width: 1100px;
-      width: 100%;
-      gap: 40px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
+    /* Sidebar */
+    .sidebar {background:var(--glass); border-radius:14px; padding:12px; box-shadow:0 8px 30px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.2); display:flex; flex-direction:column; gap:12px}
+    .side-section {background: #fff; border-radius:10px; padding:10px; border:1px solid #eee}
+    .side-title {font-weight:700; color:var(--accent1); margin-bottom:8px}
+    .list-item {padding:8px; border-radius:8px; display:flex; justify-content:space-between; gap:8px; align-items:center; border-bottom:1px dashed #f1f1f1}
+    .list-item:last-child{border-bottom:none}
+    .muted {color:var(--muted); font-size:0.9rem}
+    .small {font-size:0.85rem}
+    .btn {padding:6px 10px;border-radius:8px;border:none;cursor:pointer}
+    .btn-sm {padding:6px 8px;font-size:0.9rem}
+    .btn-primary {background:var(--accent1); color:white}
+    .btn-ghost {background:transparent;border:1px solid var(--accent1); color:var(--accent1)}
+    .toggle {display:inline-flex; align-items:center; gap:8px}
 
-    .card img.doctor {
-      width: 450px;
-      height: auto;
-    }
+    /* Main chat */
+    .chat-wrap {display:flex; flex-direction:column; background:var(--glass); border-radius:14px; overflow:hidden; box-shadow:0 8px 30px rgba(0,0,0,0.12); border:1px solid rgba(255,255,255,0.2)}
+    .chat-header{background:linear-gradient(90deg,var(--accent1),var(--accent2)); color:#fff;padding:12px 16px; display:flex; justify-content:space-between; align-items:center}
+    .chat-body{padding:14px; flex:1; overflow:auto; display:flex; flex-direction:column; gap:12px}
+    .chat-input-area{display:flex; gap:10px; padding:12px; border-top:1px solid rgba(0,0,0,0.04); align-items:center}
+    input[type=text]{flex:1;padding:10px 12px;border-radius:10px;border:1px solid #ddd}
+    .icon-btn{width:44px; height:44px; border-radius:50%; border:none; background:linear-gradient(180deg,var(--accent1),#00b398); color:#fff; cursor:pointer}
 
-    .form-section {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
+    .message {max-width:78%; padding:12px 14px; border-radius:14px; box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+    .from-user {align-self:flex-end; background:linear-gradient(90deg,#00796b,#00695c); color:white; border-bottom-right-radius:6px}
+    .from-bot {align-self:flex-start; background:#e0f7fa; color:#004d40; border-bottom-left-radius:6px; border:1px solid rgba(0,77,64,0.06)}
+    .from-system {align-self:center; background:#fff3cd; color:#856404; border:1px solid #ffeeba; font-weight:600}
 
-    .form-section h1 {
-      font-size: 2.5rem;
-      color: #084848;
-      margin-bottom: 10px;
-    }
+    .metadata {font-size:0.9rem;color:var(--muted)}
+    .structured-result {background:#fff;padding:12px;border-radius:10px;border:1px solid #eee}
 
-    .form-section p {
-      font-size: 1.2rem;
-      color: #084848;
-      margin-bottom: 20px;
-    }
-
-    .input-row {
-      display: flex;
-      align-items: center;
-      background-color: #015c5c;
-      border-radius: 20px;
-      padding: 10px 20px;
-      margin-bottom: 20px;
-      color: white;
-      gap: 15px;
-      flex-wrap: wrap;
-    }
-
-    .input-row input[type="text"] {
-      flex: 1;
-      border: none;
-      background: transparent;
-      color: white;
-      font-size: 1rem;
-      outline: none;
-    }
-
-    .input-row input[type="file"] {
-      display: none;
-    }
-
-    .icon-btn {
-      background: transparent;
-      border: none;
-      cursor: pointer;
-    }
-
-    .icon-btn img {
-      width: 24px;
-      height: 24px;
-    }
-
-    select#imageCategory {
-      padding: 8px;
-      border-radius: 10px;
-      border: 1px solid #015c5c;
-      margin-bottom: 20px;
-      width: 100%;
-      font-size: 1rem;
-      color: #084848;
-      font-weight: bold;
-    }
-
-    .submit-button {
-      background: linear-gradient(to right, #04c8c8, #4fd1b1);
-      border: none;
-      border-radius: 30px;
-      padding: 15px 30px;
-      font-size: 1rem;
-      font-weight: bold;
-      color: white;
-      cursor: pointer;
-      transition: background 0.3s ease;
-    }
-
-    .submit-button:hover {
-      background: linear-gradient(to right, #04b0b0, #3dc2a3);
-    }
-
-    .result-box {
-      margin-top: 20px;
-      background-color: #ffffffcc;
-      padding: 20px 25px;
-      border-radius: 20px;
-      color: #084848;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-      max-height: 300px;
-      overflow-y: auto;
-      display: none;
-      white-space: pre-wrap;
-    }
-
-    .result-box::-webkit-scrollbar {
-      width: 8px;
-    }
-
-    .result-box::-webkit-scrollbar-thumb {
-      background-color: #cccccc;
-      border-radius: 4px;
-    }
-
-    .result-box::-webkit-scrollbar-track {
-      background: transparent;
-    }
-
-    .thinking-animation {
-      display: inline-block;
-    }
-
-    .dot {
-      display: inline-block;
-      width: 8px;
-      height: 8px;
-      margin: 0 2px;
-      background-color: #084848;
-      border-radius: 50%;
-      animation: bounce 1.2s infinite ease-in-out both;
-    }
-
-    .dot:nth-child(2) {
-      animation-delay: 0.2s;
-    }
-
-    .dot:nth-child(3) {
-      animation-delay: 0.4s;
-    }
-
-@keyframes bounce { 
-  0%, 80%, 100% {
-    transform: scale(0);
-  }
-  40% {
-    transform: scale(1);
-  }
-}
-
+    /* Responsive */
+    @media (max-width:900px){.app{grid-template-columns:1fr; height:95vh} .sidebar{order:2}}
   </style>
 </head>
 <body>
-  <div class="card">
-    <img src="/static/images/doctor.png" alt="Doctor Illustration" class="doctor" />
-
-    <div class="form-section">
-      <h1>Telemedicine</h1>
-      <p>Enter your symptoms or upload an image</p>
-
-      <div class="input-row">
-        <input id="symptomInput" type="text" placeholder="Describe your symptoms..." />
-
-        <button class="icon-btn" id="micButton" title="Start Voice Input">
-          <img src="/static/images/microphone.png" alt="Mic Icon" />
-        </button>
-
-        <label class="icon-btn" for="imageInput">
-          <img src="/static/images/picture.png" alt="Upload Icon" />
-        </label>
-        <input type="file" id="imageInput" accept="image/*" />
+  <div class="app">
+    <aside class="sidebar" aria-label="Sidebar">
+      <div class="side-section">
+        <div class="side-title">Available Doctors</div>
+        <div id="doctorsList" class="small muted">Loading...</div>
       </div>
 
-      <label for="imageCategory" style="color: #084848; font-weight: bold; margin-bottom: 10px; display: block;">
-        Select Image Category:
-      </label>
-      <select id="imageCategory">
-        <option value="">-- Select category --</option>
-        <option value="skin">Skin</option>
-        <option value="dental">Dental</option>
-        <option value="eye">Eye</option>
-        <option value="hair">Hair</option>
-      </select>
-
-      <button class="submit-button" onclick="submitData()">Submit</button>
-
-      <div id="resultBox" class="result-box">
-        <strong>Result:</strong> Waiting for response...
+      <div class="side-section">
+        <div class="side-title">Registered Patients</div>
+        <div id="patientsList" class="small muted">Loading...</div>
       </div>
-    </div>
+
+      <div class="side-section">
+        <div class="side-title">Session Info</div>
+        <div id="sessionInfo" class="small muted">No active session</div>
+        <div style="margin-top:8px"><button id="btnNewSession" class="btn btn-ghost btn-sm">Start New Session</button></div>
+      </div>
+
+      <div class="side-section">
+        <div class="side-title">Interaction</div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div class="toggle"><label for="doctorToggle">Doctor Mode</label></div>
+          <div><input id="doctorToggle" type="checkbox" /></div>
+        </div>
+        <div style="margin-top:8px"><button id="btnToggleAuto" class="btn btn-sm btn-primary">Enable Doctor-After-Upload</button></div>
+        <div style="margin-top:6px" class="muted small">When enabled, after uploading a file the assistant will act like a real doctor for up to two messages.</div>
+      </div>
+
+    </aside>
+
+    <main class="chat-wrap" role="main">
+      <div class="chat-header">
+        <div>🩺 Telemedicine Assistant</div>
+        <div class="metadata">Type 'exit' to end session • Use file/voice buttons</div>
+      </div>
+
+      <div id="chatBody" class="chat-body" aria-live="polite"></div>
+
+      <div class="chat-input-area">
+        <input id="txtInput" type="text" placeholder="Type or answer the current prompt..." />
+        <input id="fileInput" type="file" accept=".pdf,.docx,.doc,.jpg,.jpeg,.png,.webm,.mp3,.wav,.txt" style="display:none" />
+        <button id="btnFile" class="icon-btn" title="Attach file">📁</button>
+        <button id="btnVoice" class="icon-btn" title="Voice (not implemented)">🎤</button>
+        <button id="btnSend" class="icon-btn" title="Send">➤</button>
+      </div>
+    </main>
   </div>
 
-  <script>
-    function showThinkingAnimation() {
-      return '<div class="thinking-animation">' +
-        '<span class="dot"></span>' +
-        '<span class="dot"></span>' +
-        '<span class="dot"></span>' +
-        '</div>';
-    }
+<script>
+let sessionId = localStorage.getItem('session_id') || null;
+const chatBody = document.getElementById('chatBody');
+const txtInput = document.getElementById('txtInput');
+const btnSend = document.getElementById('btnSend');
+const btnFile = document.getElementById('btnFile');
+const fileInput = document.getElementById('fileInput');
+const doctorsListEl = document.getElementById('doctorsList');
+const patientsListEl = document.getElementById('patientsList');
+const sessionInfoEl = document.getElementById('sessionInfo');
+const btnNewSession = document.getElementById('btnNewSession');
+const doctorToggle = document.getElementById('doctorToggle');
+const btnToggleAuto = document.getElementById('btnToggleAuto');
 
-    async function submitData() {
-      const text = document.getElementById("symptomInput").value.trim();
-      const imageFile = document.getElementById("imageInput").files[0];
-      const category = document.getElementById("imageCategory").value;
-      const resultBox = document.getElementById("resultBox");
+let enableDoctorAfterUpload = false; // controlled by btnToggleAuto
+let doctorModeLocal = false; // local override for sending doctor_mode flag for next few messages
+let doctorTurnsRemaining = 0;
 
-      const formData = new FormData();
-      let userInput = "";
+function el(html){ const d=document.createElement('div'); d.innerHTML = html; return d.firstElementChild; }
+function addMessage(text, type='bot'){
+  const cls = type==='user' ? 'from-user' : (type==='system' ? 'from-system' : 'from-bot');
+  const node = document.createElement('div'); node.className = 'message '+cls; node.innerHTML = text.replace(/\n/g,'<br>'); chatBody.appendChild(node); chatBody.scrollTop = chatBody.scrollHeight; return node; }
+function addStructured(items){ const wrap=document.createElement('div'); wrap.className='structured-result'; const ol=document.createElement('ol'); ol.style.margin='0 0 0 16px'; items.forEach(it=>{ const li=document.createElement('li'); li.style.margin='6px 0'; li.innerHTML = it; ol.appendChild(li); }); wrap.appendChild(ol); chatBody.appendChild(wrap); chatBody.scrollTop = chatBody.scrollHeight; }
 
-      if (imageFile) {
-        if (!category) {
-          resultBox.innerHTML = "<strong>Error:</strong> Please select an image category.";
-          resultBox.style.display = "block";
-          return;
-        }
-        formData.append("mode", "image");
-        formData.append("image", imageFile);
-        formData.append("image_category", category);
-        userInput = "User uploaded an image.";
-      } else if (text) {
-        formData.append("mode", "text");
-        formData.append("text", text);
-        userInput = `User said: \"${text}\"`;
-      } else {
-        resultBox.innerHTML = "<strong>Error:</strong> Please enter symptoms or upload an image.";
-        resultBox.style.display = "block";
-        return;
-      }
+async function apiSubmit(fields={}, file=null){
+  const fd=new FormData();
+  if(sessionId) fd.append('session_id', sessionId);
+  Object.keys(fields).forEach(k=>fd.append(k, fields[k]));
+  if(file) fd.append('file', file, file.name||'upload');
+  const res = await fetch('/api/submit', { method:'POST', body:fd });
+  // return parsed json (or raw text if parsing fails)
+  try {
+    return await res.json();
+  } catch(e){
+    const txt = await res.text();
+    return { success: false, error: 'Invalid JSON from server', raw: txt };
+  }
+}
+async function apiBook(payload){ const res = await fetch('/api/book',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload)}); return res.json().catch(()=>null); }
 
-      resultBox.innerHTML = `${userInput}\n\n<strong>Thinking</strong> ${showThinkingAnimation()}`;
-      resultBox.style.display = "block";
+async function loadDoctors(){
+  try{
+    const r = await fetch('/api/doctors');
+    if(r.ok){ const data=await r.json(); renderDoctorsSide(data.doctors||data||[]); return; }
+  }catch(e){}
+  try{
+    const ping = new FormData(); ping.append('mode','ping'); if(sessionId) ping.append('session_id', sessionId);
+    const r=await fetch('/api/submit',{method:'POST', body:ping});
+    const j=await r.json();
+    if(j && j.doctors){ renderDoctorsSide(j.doctors); return; }
+  }catch(e){}
+  doctorsListEl.innerHTML = '<div class="muted">No doctors available</div>';
+}
+async function loadPatients(){
+  try{ const r = await fetch('/api/patients'); if(r.ok){ const j=await r.json(); renderPatientsSide(j.patients||[]); return; }}catch(e){}
+  if(sessionId){ const meta = localStorage.getItem('session_meta'); if(meta){ try{ const m = JSON.parse(meta); if(m.user_id) renderPatientsSide([{id:m.user_id,name:m.name||'Unknown'}]); else patientsListEl.innerHTML = '<div class=\"muted\">No patients cached</div>'; }catch(e){ patientsListEl.innerHTML = '<div class=\"muted\">No patients cached</div>'; } } else patientsListEl.innerHTML = '<div class=\"muted\">No patients cached</div>'; }
+}
 
-      try {
-        const response = await fetch("/analyze", {
-          method: "POST",
-          body: formData
-        });
+function renderDoctorsSide(list){
+  if(!list || list.length===0){ doctorsListEl.innerHTML = '<div class=\"muted\">No doctors</div>'; return; }
+  doctorsListEl.innerHTML='';
+  list.forEach(d=>{
+    const id=d.id||d['id']||'';
+    const name=d.name||d['name']||'Dr';
+    const spec=d.specialty||d.spec||'';
+    const available = (d.slots||[]).filter(s => !(d.booked_slots||[]).includes(s));
+    const item = document.createElement('div'); item.className='list-item';
+    item.innerHTML = `<div><strong>${name}</strong><div class='muted small'>${spec}</div><div class='muted small'>ID: ${id}</div><div class='muted small'>Available: ${available.join(', ')||'—'}</div></div>`;
+    const actions = document.createElement('div');
+    const btn = document.createElement('button'); btn.className='btn btn-sm btn-primary'; btn.textContent='Use ID';
+    btn.onclick = ()=>{ txtInput.value = id; txtInput.focus(); addMessageLocally(id); };
+    actions.appendChild(btn);
+    item.appendChild(actions);
+    doctorsListEl.appendChild(item);
+  });
+}
+function renderPatientsSide(list){
+  if(!list || list.length===0){ patientsListEl.innerHTML = '<div class=\"muted\">No patients</div>'; return; }
+  patientsListEl.innerHTML='';
+  list.forEach(p=>{
+    const item = document.createElement('div'); item.className='list-item';
+    item.innerHTML = `<div><strong>${p.name||p['name']||'Patient'}</strong><div class='muted small'>ID: ${p.id||p['id']||''}</div></div>`;
+    const btn = document.createElement('button'); btn.className='btn btn-sm btn-ghost'; btn.textContent='Select';
+    btn.onclick = ()=>{ sendMessage(p.id||p['id']); };
+    item.appendChild(btn);
+    patientsListEl.appendChild(item);
+  });
+}
 
-        const data = await response.json();
+function addMessageLocally(text){ const node = document.createElement('div'); node.className='message from-user'; node.innerText = text; chatBody.appendChild(node); chatBody.scrollTop = chatBody.scrollHeight; }
 
-        if (data.error) {
-          resultBox.innerHTML = `${userInput}\n\n<strong>Error:</strong> ${data.error}`;
-        } else {
-          resultBox.innerHTML = `${userInput}\n\n<strong>Diagnosis:</strong> ${data.diagnosis}`;
-          if (data.meet_link) {
-            resultBox.innerHTML += `\n\n<a href="${data.meet_link}" target="_blank">Join Google Meet</a>`;
-          }
-        }
-      } catch (error) {
-        resultBox.innerHTML = `${userInput}\n\n<strong>Error:</strong> ${error.message}`;
-      }
-    }
+btnNewSession.addEventListener('click', async ()=>{ const j = await apiSubmit({mode:'init', message:''}); if(j && j.success){ sessionId = j.session_id; localStorage.setItem('session_id', sessionId); sessionInfoEl.innerText = 'Session: ' + sessionId; if(j.bot_message) addMessage(j.bot_message,'bot'); if(j.expecting_field) addMessage('(System) Please answer: ' + j.expecting_field,'system'); } await loadDoctors(); await loadPatients(); });
 
-    let recognition;
-    const micButton = document.getElementById("micButton");
+btnSend.addEventListener('click', async ()=>{ const text = txtInput.value.trim(); if(!text) return; if(['exit','quit','bye','by'].includes(text.toLowerCase())){ addMessage('Session ended. To start again click Start New Session','system'); localStorage.removeItem('session_id'); sessionId=null; sessionInfoEl.innerText='No active session'; txtInput.value=''; return; } addMessageLocally(text); txtInput.value=''; const fields = { mode:'text', message:text }; if(doctorToggle.checked || doctorModeLocal) fields.doctor_mode='1'; const res = await apiSubmit(fields); handleResponse(res); if(doctorModeLocal){ doctorTurnsRemaining--; if(doctorTurnsRemaining<=0){ doctorModeLocal=false; addMessage('(System) Doctor mode (auto) ended.','system'); } }});
 
-    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      recognition = new SpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.lang = 'en-US';
+async function sendMessage(msg){ addMessageLocally(msg); const fields = { mode:'text', message:msg }; if(doctorToggle.checked || doctorModeLocal) fields.doctor_mode='1'; const res = await apiSubmit(fields); handleResponse(res); if(doctorModeLocal){ doctorTurnsRemaining--; if(doctorTurnsRemaining<=0){ doctorModeLocal=false; addMessage('(System) Doctor mode (auto) ended.','system'); } } }
 
-      micButton.addEventListener('click', () => {
-        recognition.start();
-        micButton.querySelector('img').style.filter = 'brightness(0.5)';
-      });
+function handleResponse(data){
+  if(!data){ addMessage('Server error','system'); return; }
+  if(data.session_id){ sessionId = data.session_id; localStorage.setItem('session_id', sessionId); sessionInfoEl.innerText = 'Session: ' + sessionId; }
+  if(data.bot_message) {
+    // avoid printing empty bot messages
+    if(String(data.bot_message||'').trim()) addMessage(data.bot_message,'bot');
+  }
+  if(data.structured && Array.isArray(data.structured)) addStructured(data.structured);
+  if(data.doctors) renderDoctorsSide(data.doctors);
+  if(data.meta){ try{ localStorage.setItem('session_meta', JSON.stringify(data.meta)); const uid = data.meta.user_id||data.meta.userId||null; if(uid) sessionInfoEl.innerText = 'Session: ' + sessionId + ' • User: ' + (data.meta.name||'') + ' ('+uid+')'; }catch(e){} }
+  if(data.expecting_field) addMessage('(System) Please answer: ' + data.expecting_field,'system');
+  if(data.doctors) renderDoctorsSide(data.doctors);
+  if(data.patients) renderPatientsSide(data.patients);
 
-      recognition.onresult = (event) => {
-        const speechResult = event.results[0][0].transcript;
-        document.getElementById("symptomInput").value = speechResult;
-        micButton.querySelector('img').style.filter = 'none';
-      };
+  // if booking result text appears (contains 'Booking result' or 'Booked')
+  if(data.bot_message && /book(ed|ing result)/i.test(data.bot_message)) {
+    // reflect available doctors list in sidebar after booking change
+    loadDoctors();
+    loadPatients();
+  }
+}
 
-      recognition.onerror = (event) => {
-        alert("Voice recognition error: " + event.error);
-        micButton.querySelector('img').style.filter = 'none';
-      };
+// initial load
+(async ()=>{
+  await loadDoctors();
+  await loadPatients();
+  if(!sessionId){
+    addMessage("Hello! I'm your telemedicine assistant. Have you visited before? (yes/no)",'bot');
+  } else {
+    const ping = new FormData(); ping.append('mode','ping'); ping.append('session_id', sessionId);
+    const r=await fetch('/api/submit',{method:'POST', body:ping});
+    const j=await r.json().catch(()=>null);
+    if(j && j.bot_message) addMessage(j.bot_message,'bot');
+  }
+})();
 
-      recognition.onend = () => {
-        micButton.querySelector('img').style.filter = 'none';
-      };
+// allow enter key
+txtInput.addEventListener('keypress',(e)=>{ if(e.key==='Enter'){ e.preventDefault(); btnSend.click(); } });
+
+// --- file upload wiring ---
+btnFile.addEventListener('click', ()=> fileInput.click());
+
+fileInput.addEventListener('change', async (ev) => {
+  const file = ev.target.files && ev.target.files[0];
+  if(!file) return;
+
+  // show file in chat UI immediately
+  addMessageLocally(`📎 ${file.name}`);
+
+  function deduceMode(file){
+    const t = (file.type || '').toLowerCase();
+    if(t.startsWith('image/')) return 'image';
+    if(t.startsWith('audio/')) return 'audio';
+    const name = (file.name || '').toLowerCase();
+    if(name.endsWith('.pdf') || name.endsWith('.doc') || name.endsWith('.docx') || name.endsWith('.txt')) return 'document';
+    return 'document';
+  }
+
+  const mode = deduceMode(file);
+
+  // Ensure session exists: if not, create one then re-run upload
+  if(!sessionId){
+    const initRes = await apiSubmit({mode:'init', message:''});
+    if(initRes && initRes.session_id){
+      sessionId = initRes.session_id;
+      localStorage.setItem('session_id', sessionId);
+      sessionInfoEl.innerText = 'Session: ' + sessionId;
+      if(initRes.bot_message) addMessage(initRes.bot_message,'bot');
     } else {
-      micButton.addEventListener('click', () => {
-        alert("Sorry, your browser does not support speech recognition.");
-      });
+      addMessage('Unable to create session before uploading file.','system');
+      return;
     }
-  </script>
+  }
+
+  // upload file
+  try{
+    const fields = { mode: mode, message: '' };
+    // If user checked doctor toggle, send that flag too
+    if(doctorToggle.checked) fields.doctor_mode='1';
+    const res = await apiSubmit(fields, file);
+    if(!res){
+      addMessage('Server returned an unexpected response for the file upload.','system');
+      return;
+    }
+    handleResponse(res);
+
+    // If auto-enable is desired after upload, enable local doctor mode for 2 messages
+    if(enableDoctorAfterUpload || res.doctor_mode_enabled){
+      doctorModeLocal = true;
+      doctorTurnsRemaining = 2;
+      doctorToggle.checked = true;
+      addMessage('(System) Doctor mode enabled for next 2 messages.','system');
+    }
+  }catch(err){
+    console.error('Upload failed', err);
+    addMessage('File upload failed. See console/network for details.','system');
+  } finally {
+    fileInput.value = '';
+  }
+});
+
+// Toggle auto-after-upload button behavior
+btnToggleAuto.addEventListener('click', ()=> {
+  enableDoctorAfterUpload = !enableDoctorAfterUpload;
+  btnToggleAuto.textContent = enableDoctorAfterUpload ? 'Disable Doctor-After-Upload' : 'Enable Doctor-After-Upload';
+  addMessage(`(System) Auto doctor-after-upload is now ${enableDoctorAfterUpload ? 'ENABLED' : 'DISABLED'}.`,'system');
+});
+</script>
 </body>
 </html>
